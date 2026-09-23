@@ -1,4 +1,84 @@
-# Agentic AI Swing Trader: Presentation Outline
+# Individual Project: Presentation Outline
+
+> **Status (2026-09-23): changing direction, not decided yet.** The Agentic AI Swing Trader outline is kept at the bottom as an archive. The two options still being considered are below.
+
+## Direction Change
+
+### Why change
+
+- The brief asks for a **trained text classification model** (e.g. Naive Bayes, BERT) built with Python (Scikit-learn, PyTorch, HuggingFace). In the swing trader, the LLM agents do the classification, so no classifier is actually built or trained.
+- **"Accuracy and performance of models"** is graded, so the project needs a **public labelled dataset** to report precision, recall, F1 and a confusion matrix. Without one, most of the time goes into labelling data.
+- **Image classification is optional,** but the brief's retail case is built on combining text and images. Doing it counts towards "creativity in combining text insights".
+- **To check with the lecturer:** the brief's retail case is "applicable to both options". Confirm we're allowed to choose our own business case. If not, Option 1 is closest to the brief.
+
+### How the demo works (applies to both options)
+
+The model is just a function: text or an image goes in, and a label with a confidence score comes out. No live connection to WhatsApp or a company database is needed. The training dataset is used offline to train and evaluate the model. At demo time, the input comes from the user through a thin interface.
+
+```
+[Input channel] → [Preprocess] → [Model] → [Decision rule] → [Output channel]
+ web form / bot    clean, OCR     label+conf   flag / approve    screen / reply / dashboard
+```
+
+The grade is mostly about the middle three boxes. The input and output channels are only there to make the demo convincing.
+
+### Option 1: Returns and Refund Triage (e-commerce sellers)
+
+- **Problem:** sellers read every return or refund request by hand. The product decides whether to auto-approve, ask for more information, or escalate.
+- **Text model:** complaint message → wrong item / damaged / not as described / changed mind.
+- **Image model (optional):** uploaded photo → damaged vs. intact, or whether it matches the listing.
+- **Combined decision:** text and image agree it's damaged → auto-refund. They disagree → flag for a person to review.
+- **Customer journey:** a return request form (message plus photo) → an instant status shown to the customer → a **seller triage dashboard** listing requests with labels and flags. SQLite or a CSV file is enough to link the two screens.
+- **Datasets:** Amazon Reviews 2023 (McAuley Lab; some reviews include photos) for text, MVTec AD for defect images. The defect images are only a stand-in for customer product photos.
+- **Strengths:** it's closest to the brief's retail case, uses both text and images, trains the text model on real data, and ends with a clear business action.
+- **Weaknesses:** the demo has less "wow" than Option 2, and the image data only approximates the real use case.
+
+### Option 2: Scam Message Checker (consumers, Singapore)
+
+- **Problem:** SMS and WhatsApp scams (job, investment, impersonation, phishing) are a major problem in Singapore, and users can't easily tell whether a message is a scam.
+- **Text model:** message → ham / spam / smishing, possibly extended to scam type.
+- **Image part:** screenshot → OCR → text model, so users can just send a screenshot. This is OCR rather than true image classification. A possible extension is an image classifier that detects fake bank or login pages in screenshots.
+- **Customer journey: "forward to check"** (this is how Singapore's CheckMate WhatsApp bot works). WhatsApp chats can't be read directly because they are end-to-end encrypted and there's no API for them. Instead:
+  1. The user gets a suspicious message.
+  2. They forward the message, or a screenshot of it, to the bot.
+  3. The bot replies, e.g. *"⚠️ Likely scam: job scam (92%). Red flags: 'easy money', 'Telegram', 'deposit'."* The red flags come from LIME or SHAP.
+- **Ways to deliver it:**
+
+| Option | Effort | Notes |
+|---|---|---|
+| Gradio / Streamlit web page (paste text or upload a screenshot) | Very low | Enough for the grade |
+| **Telegram bot** (`python-telegram-bot`) | Low, about 50–80 lines | Free, no approval process, runs on a laptop. Best demo: forward a scam on the phone and show the reply live |
+| WhatsApp bot (Meta WhatsApp Cloud API) | Medium to high | Needs a Meta Business account and a registered number. Too much hassle for this project |
+| Automatic SMS filtering (native Android app or iOS SMS filter extension) | High | Out of scope |
+
+- **Optional:** log each check to SQLite and show a "scam trends" chart.
+- **Datasets:** UCI SMS Spam Collection (5,574 messages, ham/spam), Mendeley SMS Phishing Dataset (2022; ham / spam / smishing).
+- **Strengths:** the most natural end-user experience, the strongest demo, real text data, and relevant to Singapore.
+- **Weaknesses:** it doesn't match the brief's retail case (lecturer approval needed), the image part is OCR rather than image classification, and the datasets are not Singapore-specific.
+
+### Options considered and dropped
+
+- **#5 Car insurance claim triage** (claim text plus car damage photos, CarDD dataset). Dropped because there's no public dataset of claim *texts*. The descriptions would have to be synthetic, which weakens the text classifier, and that is the part the brief grades most.
+- Others looked at: fake job posting detector (EMSCAD), fake review detector, content moderation (Jigsaw Toxic), support ticket router (Banking77), bank complaint routing (CFPB), SME expense categorisation (SROIE), and financial news sentiment with a trained model (FinancialPhraseBank).
+
+### Project shape (either option)
+
+1. **Preprocessing pipeline:** cleaning, deduplication, a stratified split, and handling class imbalance. This is graded on its own.
+2. **Model ladder:** start with TF-IDF plus Naive Bayes or Logistic Regression as a baseline, then fine-tune DistilBERT or RoBERTa. Optionally compare against a zero-shot LLM from the old swing trader work. Report metrics for every model.
+3. **Explainability:** LIME or SHAP to show which words drove each prediction.
+4. **Image model (optional):** fine-tune ResNet or EfficientNet, or use CLIP zero-shot. Add a rule or scoring layer that merges text and image outputs into a decision.
+5. **Usability:** a reusable `predict()` module, a config file for labels and paths, and a Gradio, Streamlit or Telegram front end for the demo video.
+
+### Next steps
+
+- [ ] Confirm with the lecturer that we can choose our own business case (this affects Option 2)
+- [ ] Check the datasets for each option: size, labels, class balance, how recent they are, licence
+- [ ] Choose Option 1 or Option 2
+- [ ] Rewrite this outline for the chosen option
+
+---
+
+# Archive: Agentic AI Swing Trader (previous direction)
 
 **Format:** Option A (Coding-Based), framed as a pitch to the CTO
 **Length:** ~5 minute screen-recorded video
