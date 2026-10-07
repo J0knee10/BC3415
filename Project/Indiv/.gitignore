@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+artifacts/
+reports/
+.ipynb_checkpoints/
+tessdata/

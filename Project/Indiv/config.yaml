@@ -1,0 +1,56 @@
+# Smishing Triage — central configuration.
+# Every path, label and split parameter lives here so that nothing is hardcoded
+# in the modules. Change a value here and the whole pipeline follows.
+
+# --- Labels -------------------------------------------------------------
+# Order matters: it fixes the integer encoding and the axis order of every
+# confusion matrix produced by the project.
+labels:
+  names: [ham, spam, smishing]
+  # The class the project is actually about. Recall on this class is the
+  # headline metric, not overall accuracy.
+  target: smishing
+
+# --- Paths --------------------------------------------------------------
+# All paths are relative to the project root (the directory holding this file).
+paths:
+  raw: data/raw
+  processed: data/processed
+  artifacts: artifacts
+  reports: reports
+  tessdata: tessdata     # Tesseract language data for the OCR path
+
+# --- Data splitting -----------------------------------------------------
+split:
+  test_size: 0.20
+  val_size: 0.15        # fraction of the remaining train pool
+  random_state: 42
+  stratify: true
+
+# --- Text normalisation -------------------------------------------------
+# Placeholder tokens replace URLs, phone numbers and money amounts. Their
+# presence is predictive even when the specific value is not, so they are
+# substituted rather than deleted.
+normalise:
+  url_token: " URLTOKEN "
+  email_token: " EMAILTOKEN "
+  phone_token: " PHONETOKEN "
+  money_token: " MONEYTOKEN "
+  number_token: " NUMTOKEN "
+
+# --- Evaluation ---------------------------------------------------------
+# Cost matrix for choosing an operating point. Rows are the true class,
+# columns the predicted class, in the order given by labels.names.
+# A missed smishing message is the expensive error; a marketing text flagged
+# as smishing is a minor annoyance; spam left in the inbox costs nothing.
+cost_matrix:
+  ham:      {ham: 0, spam: 1,  smishing: 2}
+  spam:     {ham: 0, spam: 0,  smishing: 1}
+  smishing: {ham: 20, spam: 10, smishing: 0}
+
+evaluate:
+  # Bootstrap resamples used for confidence intervals on the smishing metrics.
+  # The smishing test set is small (~128 messages), so a point estimate alone
+  # would overstate precision.
+  bootstrap_n: 2000
+  bootstrap_alpha: 0.05

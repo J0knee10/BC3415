@@ -1,0 +1,26 @@
+# BC3415 Week 5 - W4 Text Classification (News Category) v002
+# Versions used for the executed run of the submitted notebook. Python 3.11.9.
+#
+#   pip install -r requirements.txt
+#
+# NLTK also needs its corpora; the notebook downloads them automatically on first run:
+#   python -c "import nltk; [nltk.download(p) for p in ['wordnet','omw-1.4','stopwords']]"
+
+pandas==2.3.3
+numpy==2.3.5
+scikit-learn==1.9.0
+scipy==1.17.1
+matplotlib==3.11.1
+nltk==3.10.3
+xgboost==3.2.0
+joblib==1.5.3
+
+# To open and run the notebook
+ipykernel==7.3.0
+jupyter_core==5.9.1
+notebook
+
+# Optional - only needed if Section 17 (BERT) is enabled with RUN_BERT = True.
+# Not installed for this submission; the classical pipeline needs no GPU.
+# sentence-transformers
+# torch
