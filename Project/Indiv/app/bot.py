@@ -58,7 +58,7 @@ NO_TEXT = (
 
 
 async def cmd_start(update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text(WELCOME, parse_mode="Markdown")
+    await update.effective_message.reply_text(WELCOME, parse_mode="Markdown")
 
 
 async def _respond(update: Update, message: str) -> None:
@@ -77,26 +77,26 @@ async def _respond(update: Update, message: str) -> None:
         scam is not None,
     )
 
-    await update.message.reply_text(scam_type.describe(prediction, scam))
+    await update.effective_message.reply_text(scam_type.describe(prediction, scam))
 
 
 async def on_text(update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    await _respond(update, update.message.text)
+    await _respond(update, update.effective_message.text)
 
 
 async def on_photo(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     """Screenshot path: download, OCR, then the same classifier."""
     if not ocr.tesseract_available():
-        await update.message.reply_text(
+        await update.effective_message.reply_text(
             "Screenshot reading is unavailable on this server — "
             "paste the message as text instead."
         )
         return
 
-    await update.message.chat.send_action("typing")
+    await update.effective_message.chat.send_action("typing")
 
     # Highest resolution Telegram offers; OCR quality depends on it.
-    photo = await ctx.bot.get_file(update.message.photo[-1].file_id)
+    photo = await ctx.bot.get_file(update.effective_message.photo[-1].file_id)
 
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "shot.jpg"
@@ -104,14 +104,14 @@ async def on_photo(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         try:
             text = ocr.image_to_text(path)
         except RuntimeError as exc:
-            await update.message.reply_text(str(exc))
+            await update.effective_message.reply_text(str(exc))
             return
 
     if not text:
-        await update.message.reply_text(NO_TEXT)
+        await update.effective_message.reply_text(NO_TEXT)
         return
 
-    await update.message.reply_text(f'I read: "{text}"')
+    await update.effective_message.reply_text(f'I read: "{text}"')
     await _respond(update, text)
 
 

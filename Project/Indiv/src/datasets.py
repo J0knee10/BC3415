@@ -63,7 +63,10 @@ def load_uci() -> pd.DataFrame:
         sep="\t",
         header=None,
         names=["label", "text"],
-        encoding="latin-1",  # the file is not valid UTF-8
+        # UTF-8, despite the corpus's age. Reading it as latin-1 turns every
+        # "£" into "Â£", which the character model would then learn as a cue
+        # that no real incoming message contains.
+        encoding="utf-8",
         quoting=3,  # csv.QUOTE_NONE — messages contain unbalanced quotes
     )
     df["label"] = df["label"].map(_normalise_label)
@@ -120,7 +123,8 @@ def _read_mendeley_csv(folder: Path) -> pd.DataFrame:
             f"No CSV in {folder}. Run `python -m src.download` for instructions."
         )
 
-    df = pd.read_csv(csvs[0], encoding="latin-1", on_bad_lines="skip")
+    # Both published files are UTF-8; see load_uci for why the encoding matters.
+    df = pd.read_csv(csvs[0], encoding="utf-8", on_bad_lines="skip")
 
     # Find the label column: the one whose values map cleanly onto our labels.
     label_col = None
@@ -172,6 +176,25 @@ def load_mendeley_balanced() -> pd.DataFrame:
     df = _read_mendeley_csv(CFG.raw_dir / "mendeley_balanced")
     df["source"] = "mendeley_balanced"
     return _frame(df.to_dict("records"))
+
+
+# --- Singapore scams (evaluation only) ----------------------------------
+def load_sg_scams() -> pd.DataFrame:
+    """Scam messages sent to people in Singapore, quoted verbatim from public
+    sources (SPF, ScamShield, bank advisories, news) — one source URL per row.
+
+    No public corpus of local smishing exists, so this small hand-collected
+    set is the only measure of *misses* on local scams; the NUS shift set
+    measures false alarms on local ham. It is deliberately not registered in
+    ``LOADERS``: it never enters deduplication, splitting or training.
+    """
+    path = CFG.raw_dir / "sg_scams" / "sg_messages.csv"
+    if not path.exists():
+        raise FileNotFoundError(f"No Singapore scam set at {path}")
+    df = pd.read_csv(path, encoding="utf-8")
+    df["label"] = df["label"].map(_normalise_label)
+    df["source"] = "sg_scams"
+    return df.dropna(subset=["label", "text"]).reset_index(drop=True)
 
 
 # --- Registry -----------------------------------------------------------

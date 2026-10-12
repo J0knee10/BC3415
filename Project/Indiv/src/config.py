@@ -76,6 +76,11 @@ class Config:
     def evaluate(self) -> dict[str, Any]:
         return self.raw["evaluate"]
 
+    @property
+    def operating_point(self) -> str:
+        """Decision rule: ``argmax`` or ``min_cost`` (see config.yaml)."""
+        return self.raw.get("operating_point", "argmax")
+
     def cost_matrix(self) -> list[list[float]]:
         """Cost matrix as a nested list in ``labels`` order (true x predicted)."""
         cm = self.raw["cost_matrix"]

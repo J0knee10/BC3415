@@ -8,8 +8,8 @@ A binary ham-vs-spam filter puts a marketing blast and a credential-harvesting
 message in the same class. For a user, one wastes three seconds and the other
 costs them thousands of dollars. Separating them is what this project is for.
 
-For the assignment framing, scope boundaries and rationale, see
-[`PROJECT_BRIEF.md`](PROJECT_BRIEF.md). This file is the developer's guide.
+For the problem framing, results and limitations, see the technical writeup,
+`Smishing_Triage_Writeup.pdf`. This file is the developer's guide.
 
 ---
 
@@ -19,26 +19,32 @@ Champion model: **character n-gram TF-IDF + calibrated LinearSVC**.
 
 | Metric | Test |
 |---|---|
-| Accuracy | 0.9784 |
-| Macro F1 | 0.9234 |
-| **Smishing recall** | **0.9541**  (95% CI 0.911 – 0.990) |
-| False alarms on Singapore ham | 0.22%  (20 / 8,948) |
+| Accuracy | 0.9731 |
+| Macro F1 | 0.9040 |
+| **Smishing recall** | **0.8911**  (95% CI 0.826 – 0.947) |
+| Smishing precision | 0.8571 |
+| False alarms on Singapore ham | 0.26%  (23 / 8,942) |
+| Real Singapore scams caught | 63%  (38 / 60; 72% warned as spam or smishing) |
 
-Validation ladder: Naive Bayes 0.8740 → word LogReg 0.9019 → word+char LogReg
-0.9125 → **char SVM 0.9298** (macro F1).
+Validation ladder: Naive Bayes 0.9004 → word LogReg 0.9258 → word+char LogReg
+0.9279 → **char SVM 0.9453** (macro F1).
 
 Almost all remaining error is the spam↔smishing boundary. Ham is near-perfect.
+
+These numbers come from a template-aware split (see *Design decisions*). An
+earlier row-level split reported smishing recall of 0.954; about a quarter of
+its test smishing messages had a near-identical template variant in training.
 
 ---
 
 ## Setup
 
-Everything runs from the shared virtual environment at `../../.venv`; nothing
-is installed to the global interpreter.
+Python 3.11 or later, in a virtual environment:
 
 ```bash
-# From the Indiv/ directory. On Windows use ../../.venv/Scripts/python.exe
-../../.venv/Scripts/python.exe -m pip install -r requirements.txt
+python -m venv .venv
+.venv/Scripts/activate          # Windows; on macOS/Linux: source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
 ### Credentials (both optional)
@@ -48,12 +54,24 @@ is installed to the global interpreter.
 | `GEMINI_API_KEY` | Scam-type enrichment ([AI Studio](https://aistudio.google.com/apikey), free tier) | Enrichment is skipped; the classifier still answers |
 | `TELEGRAM_BOT_TOKEN` | The bot front end (from @BotFather) | `app.bot` refuses to start and explains how to get one |
 
-The OCR path additionally needs the Tesseract **binary** on the system; the
-English language data is fetched into `tessdata/` by `src.download`.
+The OCR path additionally needs the Tesseract **binary** on the system
+(Windows: `winget install UB-Mannheim.TesseractOCR`); the English language
+data is fetched into `tessdata/` by `src.download`.
 
 ---
 
 ## Quickstart
+
+The trained model (`artifacts/model.joblib`) and the processed splits
+(`data/processed/`) ship with the project, so these run straight away:
+
+```bash
+python -m src.predict "Your DBS account is locked. Verify at http://bit.ly/x9"
+python -m src.train        # retrain from data/processed and regenerate reports/
+python -m pytest tests
+```
+
+To rebuild everything from the raw corpora:
 
 ```bash
 python -m src.download     # fetch datasets + Tesseract language data
@@ -116,6 +134,8 @@ which calls `predict()` and then gates the LLM call on the verdict.
 | `python -m src.predict "<message>"` | One verdict on the command line |
 | `python -m src.ocr <image>` | Extracts text from a screenshot, then classifies it |
 | `python -m app.bot` | Runs the Telegram bot |
+| `python -m pytest tests` | Checks the guarantees the evaluation depends on (no template crosses a split, the LLM gate holds) |
+| `python build_notebook.py` | Regenerates `notebooks/walkthrough.ipynb` from the modules |
 
 **The programmatic entry point is `predict()`:**
 
@@ -126,7 +146,7 @@ result = predict("Your parcel is held at customs. Pay at http://sgpost-clear.co/
 result.label        # 'smishing'
 result.confidence   # 0.96
 result.scores       # {'ham': 0.027, 'smishing': 0.962, 'spam': 0.011}
-result.red_flags    # ['http://sgpost-clear.co/pay', 'Your', 'customs.']
+result.red_flags    # ['http://sgpost-clear.co/pay', 'customs']  (LIME)
 result.is_threat    # True
 print(result.describe())
 ```
@@ -182,10 +202,30 @@ useless. `config.yaml` carries a cost matrix (a missed smishing message costs
 20, a false alarm on ham costs 2) and `evaluate.expected_cost` reports against
 it.
 
+**The operating point is a stated choice, made with the evidence in view.**
+`src.train` scores two decision rules on validation before touching test —
+argmax, and the minimum-expected-cost rule under the matrix — and writes
+`reports/operating_point_val.csv`. The matrix prefers min-cost (smishing
+recall 0.95 → 0.99), but precision falls from 0.91 to 0.78 and false alarms on
+Singaporean ham rise from 0.26% to 1.77%. The matrix prices a false scam alarm
+at 2 and has no term for user trust, so `config.yaml` serves argmax.
+
 **Deduplication happens before splitting.** The corpora are built on each
 other — Mendeley's smishing set is UCI plus re-labelling, and UCI absorbed part
 of the NUS corpus. Deduplication removes 13,595 of 31,852 rows. Skip it and the
 same messages land in train and test.
+
+**The split is made over templates, not rows.** Scam campaigns reuse one
+template with a different phone number or prize amount each time, and exact
+deduplication keeps every variant. Splitting by row put 27% of the test
+smishing messages next to a sibling in training. `preprocess.split()` groups
+messages by their normalised text, so every variant of a template lands in one
+split, and drops synthetic and shift-set rows that share a template across the
+boundary.
+
+**Every corpus is read as UTF-8.** Reading them as latin-1 turned each "£" into
+"Â£" in over a thousand training messages — a character-model cue that no real
+incoming message carries.
 
 **303 messages carry conflicting labels across corpora**, almost all
 `uci=spam` vs `mendeley=smishing` on identical text — UCI's spam class
@@ -196,12 +236,17 @@ in `preprocess.py` resolves them to the finer label. They are written to
 **Two text columns, deliberately.** `text_clean` (normalised, lowercased,
 placeholder tokens) feeds word features; raw `text` feeds character features,
 because digits, case and punctuation are exactly what obfuscated smishing
-abuses. Every pipeline is a `ColumnTransformer` over both.
+abuses. Every pipeline is a `ColumnTransformer` over both. The character
+vectoriser sets `lowercase=False` to keep case; on validation that lifted
+macro F1 from 0.936 to 0.945.
 
 **Synthetic data is structurally barred from evaluation.** The LLM-generated
 Mendeley set is forced into the training split by `preprocess.split()`; it
-cannot reach validation or test. The ablation shows it lifts smishing recall
-+9.1pp without raising false alarms on real Singapore ham.
+cannot reach validation or test. (Its ham rows all duplicate real Mendeley ham
+and are removed by deduplication, so what survives is generated spam and
+smishing — 84% of the training smishing class.) The ablation shows it lifts
+validation smishing recall from 0.911 to 0.949 (+3.8pp), at the cost of five
+more false alarms in 8,942 Singaporean messages.
 
 **The NUS corpus is held out as a separate shift set**, not mixed in. It is
 ham-only, so it answers one sharp question: how often does the model cry wolf
@@ -220,12 +265,22 @@ label is unevaluated and no metric depends on it.
 
 ## Known limitations
 
-- The leave-one-out explainer in `predict.explain_tokens` returns nothing on
-  saturated predictions — dropping one word from a 99%-confident message does
-  not move the score. LIME or SHAP is the fix.
+- Red flags come from LIME, which is sampling-based: a flag list can include a
+  common word ("Your", "now") when it co-occurs with the real cue, and flags
+  explain the model's behaviour, not ground truth about the message.
+- **Local scams are the weak spot.** On 60 real scams sent to people in
+  Singapore (`data/raw/sg_scams/`, evaluation only, 51 transcribed by hand from
+  SPF and news screenshots), the model catches 63%. Scams with a link are caught
+  29 times in 32; chat-style scams without one (Carousell buyers, job
+  recruiters) 9 times in 28. All 5 genuine local SingPost and bank OTP messages
+  in that set were flagged, because the training ham is personal chat with
+  almost no transactional SMS. Per-message verdicts are in
+  `reports/sg_scams_predictions.csv`. Fixing this needs local training data
+  of both kinds, left for a version 2: the public data for these message types
+  is very small compared with the corpora used here.
 - OCR errors land *upstream* of the classifier, so a misread character becomes
   a feature the model never saw in training.
 - The DistilBERT rung is specified but not built; it needs `transformers` and
   `torch` (~2.5 GB).
 - On the Gemini free tier, Google may use prompts and outputs to improve its
-  models. Only messages already flagged as scams are sent. See §9 of the brief.
+  models. Only messages already flagged as scams are sent.

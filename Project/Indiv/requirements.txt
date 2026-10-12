@@ -9,6 +9,9 @@ requests>=2.31
 joblib>=1.3
 matplotlib>=3.8
 
+# Red flags: LIME token attributions behind predict()'s explanations.
+lime>=0.2
+
 # LLM second stage (scam-type enrichment). Needs GEMINI_API_KEY.
 google-genai>=2.28
 
@@ -20,10 +23,14 @@ Pillow>=10.0
 # Telegram bot front end. Needs TELEGRAM_BOT_TOKEN.
 python-telegram-bot>=21
 
+# Generates and executes notebooks/walkthrough.ipynb (build_notebook.py).
+nbformat>=5.9
+nbconvert>=7.0
+ipykernel>=6.0
+
+# Tests: `python -m pytest tests`.
+pytest>=8.0
+
 # Not yet installed — the DistilBERT rung. ~2.5 GB download.
 # transformers>=4.40
 # torch>=2.2
-
-# Not yet installed — token attributions for the writeup.
-# lime>=0.2
-# shap>=0.45

@@ -118,7 +118,7 @@ for key, group in list(conflicts.groupby("_k"))[:3]:
 md("""
 ## 2. Preprocessing — `src/preprocess.py`
 
-Normalise, deduplicate, split. Three decisions worth noticing:
+Normalise, deduplicate, split. Four decisions worth noticing:
 
 **Placeholders, not deletion.** URLs, phone numbers and amounts become marker
 tokens. Their *presence* is predictive even when the value is not.
@@ -126,6 +126,12 @@ tokens. Their *presence* is predictive even when the value is not.
 **Two text columns.** `text_clean` feeds word features; raw `text` feeds
 character features, because digits, case and punctuation are exactly what
 obfuscated smishing abuses.
+
+**The split is made over templates, not rows.** Scam campaigns reuse one
+template with a different phone number or prize amount each time; exact
+deduplication keeps every variant. Splitting by row put 27% of test smishing
+beside a sibling in training. Grouping by normalised text keeps each template
+on one side.
 
 **Synthetic rows are barred from evaluation**, structurally — the LLM-generated
 corpus is forced into the training split and cannot reach validation or test.
@@ -199,6 +205,46 @@ for i in range(cm.shape[0]):
 plt.tight_layout(); plt.show()
 """)
 
+md("""
+### Choosing the operating point
+
+The model outputs three probabilities; a *decision rule* turns them into one
+verdict. **Argmax** takes the most probable class. **Min-cost** takes the class
+with the lowest expected cost under the cost matrix in `config.yaml`, where a
+missed scam costs 20 and a false scam alarm costs 2 — so it flags a message
+as smishing even at modest probability.
+
+Both are scored on validation and the Singapore shift set before the test set
+is touched. The matrix prefers min-cost, but it buys a few extra scams with a
+large rise in false alarms on real local messages — a cost the matrix leaves
+out. `config.yaml` therefore serves argmax.
+""")
+
+code("""
+pd.read_csv(CFG.reports_dir / "operating_point_val.csv")
+""")
+
+md("""
+### Real Singapore scams
+
+The NUS shift set only measures false alarms. To measure *misses* on local
+scams, a small evaluation-only set of scam texts sent to people in Singapore
+was collected verbatim from public sources (SPF, ScamShield, bank advisories,
+news), one source URL per message. It never touches training or selection.
+""")
+
+code("""
+sg_path = CFG.reports_dir / "sg_scams_predictions.csv"
+if sg_path.exists():
+    sg = pd.read_csv(sg_path)
+    scams = sg[sg["label"] == CFG.target_label]
+    print(f"caught as smishing: {(scams['predicted'] == 'smishing').mean():.0%}  "
+          f"flagged at all: {(scams['predicted'] != 'ham').mean():.0%}  (n={len(scams)})")
+    display(scams.groupby("scam_type")["predicted"].value_counts().unstack(fill_value=0))
+else:
+    print("no Singapore scam set in data/raw/sg_scams/")
+""")
+
 # ---------------------------------------------------------------- ablation
 md("""
 ## 4. Is the synthetic augmentation earning its place? — `src/ablation.py`
@@ -235,7 +281,32 @@ for message in [
     "Your DBS account is suspended. Verify at http://dbs-secure.co/login",
 ]:
     r = predict(message)
-    print(f"{message[:58]:60} -> {r.label:9} {r.confidence:.0%}")
+    print(f"{message[:58]:60} -> {r.label:9} {r.confidence:.0%}  {r.red_flags}")
+""")
+
+md("""
+### Why it decided — LIME
+
+The red flags come from LIME. It deletes random subsets of words, re-scores
+each variant with the real model, and fits a small linear model to those
+scores; each word's weight is its estimated push towards the verdict. Deleting
+many words at once is what lets it explain a 95%-confident prediction, where
+removing any single word moves nothing.
+""")
+
+code("""
+from src.predict import explain, load_model
+
+message = "Your DBS account is suspended. Verify at http://dbs-secure.co/login"
+col = list(load_model().classes_).index("smishing")
+exp = explain(message, "smishing", num_samples=3000)
+
+fig = exp.as_pyplot_figure(label=col)
+fig.set_size_inches(7, 3.5)
+plt.title("LIME: words pushing towards 'smishing'")
+plt.tight_layout()
+fig.savefig(CFG.reports_dir / "lime_example.png", dpi=150)
+plt.show()
 """)
 
 md("""

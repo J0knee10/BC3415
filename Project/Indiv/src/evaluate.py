@@ -8,7 +8,7 @@ around that.
 Also provided:
 
 * bootstrap confidence intervals, because the smishing test set is small
-  (~128 messages) and a point estimate alone would overstate precision;
+  (~100 messages) and a point estimate alone would overstate precision;
 * expected cost under the matrix in ``config.yaml``, which is how an operating
   point gets chosen;
 * error analysis that surfaces the misses the next model has to fix.
@@ -59,6 +59,18 @@ def expected_cost(y_true, y_pred) -> float:
         if t in index and p in index:
             total += costs[index[t]][index[p]]
     return total / max(len(y_true), 1)
+
+
+def min_cost_predict(proba, classes: list[str]) -> np.ndarray:
+    """Bayes decision under the cost matrix: the label with the lowest expected cost.
+
+    The alternative operating point to argmax. With calibrated probabilities
+    it trades precision on the target class for recall, in the proportion the
+    cost matrix says those errors are worth.
+    """
+    order = [CFG.labels.index(c) for c in classes]
+    costs = np.array(CFG.cost_matrix())[np.ix_(order, order)]
+    return np.asarray(classes)[(np.asarray(proba) @ costs).argmin(axis=1)]
 
 
 def bootstrap_ci(y_true, y_pred, label: str, metric: str = "recall") -> tuple[float, float]:

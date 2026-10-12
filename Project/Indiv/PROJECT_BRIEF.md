@@ -14,7 +14,7 @@ The distinction between spam and smishing is the point of the project. A binary 
 
 ### Why this, in business terms
 
-Scam losses in Singapore run to hundreds of millions of dollars annually, and messaging is a primary delivery channel. Telcos and banks filter at the network layer, but messages still get through, and a user has no quick way to check a specific one. The product is a second opinion on demand: forward a suspicious message, get a verdict with a confidence score and the specific red flags that triggered it, in seconds.
+Scams cost people in Singapore about S$913.1 million across 37,308 cases in 2025, down from about S$1.11 billion in 2024 ([SPF Annual Scam and Cybercrime Brief 2025](https://www.police.gov.sg/-/media/SPF/Advisories/Scams/Annual-Scam-and-Cybercrime-Brief-2025.pdf)), and S$410.6 million in the first half of 2026 alone ([SPF Mid-Year Brief 2026](https://www.police.gov.sg/-/media/SPF/Media-Room/Statistics/Mid-Year-Scam-and-Cybercrime-Brief-2026/Mid-Year-Scam-and-Cybercrime-Brief-2026.pdf)). Messaging is a primary delivery channel. Telcos and banks filter at the network layer, but messages still get through, and a user has no quick way to check a specific one. The product is a second opinion on demand: forward a suspicious message, get a verdict with a confidence score and the specific red flags that triggered it, in seconds.
 
 ---
 
@@ -55,7 +55,7 @@ State these explicitly in the writeup — a drawn boundary reads as judgment, an
 
 ### The binding constraint
 
-**638 smishing messages.** This is the bottleneck class, and the brief names it rather than letting a marker discover it. A test split leaves roughly 128 smishing examples, so a single misclassification moves recall by almost a point. Mitigations, each of which earns marks in its own right:
+**638 smishing messages.** This is the bottleneck class, and the brief names it rather than letting a marker discover it. After deduplication and a template-aware split, the test set holds 101 smishing examples, so a single misclassification moves recall by a full point. Mitigations, each of which earns marks in its own right:
 
 - Stratified splits and class weighting, documented as part of the preprocessing pipeline
 - **Character n-grams**, which handle the obfuscation smishing relies on (`DB5`, `acc0unt`, shortened-link skeletons) better than word features
@@ -64,7 +64,7 @@ State these explicitly in the writeup — a drawn boundary reads as judgment, an
 
 ### Deduplication
 
-UCI and the Mendeley sets overlap. Deduplicate on normalised message text across all sources **before** splitting, or the same message lands in both train and test and inflates every number.
+UCI and the Mendeley sets overlap. Deduplicate across all sources **before** splitting, or the same message lands in both train and test and inflates every number. Then split by *template* (normalised text), not by row: scam campaigns reuse one template with a different number or amount each time, and a row-level split put 27% of test smishing beside a sibling in training.
 
 ---
 
@@ -83,7 +83,8 @@ Report accuracy, per-class precision/recall/F1, macro F1, and a confusion matrix
 1. **TF-IDF + Multinomial Naive Bayes** — the floor. Fast, and named directly in the assignment brief.
 2. **TF-IDF + Logistic Regression** — linear baseline with interpretable coefficients.
 3. **Character n-gram TF-IDF + Linear SVM** — the obfuscation handler. Expect this to be the strongest classical model.
-4. **Fine-tuned DistilBERT** — contextual model, top of the ladder.
+4. **Word + character TF-IDF + Logistic Regression** — both representations at once.
+5. **Fine-tuned DistilBERT** — contextual model, top of the ladder. *Specified, not built* (§12).
 
 Select on **validation** macro F1, with smishing recall as the tiebreak. Any threshold or ensemble weight is learned on validation and locked before the test set is touched, **once**.
 
@@ -94,6 +95,8 @@ After each rung, inspect the smishing false negatives with the lowest predicted 
 ### Evaluation framing
 
 Build a small cost matrix: a missed smishing message is expensive, spam-flagged-as-ham is free, ham-flagged-as-smishing is a minor annoyance. Choose the operating point against that matrix and say so. Reporting accuracy alone on a class-imbalanced fraud problem is the mistake this framing exists to avoid.
+
+What happened when this was done: `src.train` scores argmax and the minimum-expected-cost rule on validation and on the Singapore shift set (`reports/operating_point_val.csv`). The matrix prefers min-cost: smishing recall rises from 0.95 to 0.99. But precision falls from 0.91 to 0.78, and false alarms on Singaporean ham rise from 0.26% to 1.77%. The matrix has no term for that, so the served rule is argmax, set in `config.yaml`. This is a reportable finding: a cost matrix is only as good as the costs it leaves out.
 
 ---
 
@@ -139,7 +142,9 @@ Record the Telegram bot on a phone, screen-mirrored:
 1. Forward a real marketing SMS → **spam**, low concern
 2. Forward a real smishing SMS → **smishing**, with confidence and red flags
 3. Forward a **screenshot** of one → OCR path, same verdict
-4. Show a legitimate bank message correctly passing as **ham** — the system does not just flag everything
+4. Show an ordinary personal message correctly passing as **ham** — the system does not just flag everything. **Do not use a bank OTP or SingPost notice here:** all 5 genuine ones in the Singapore test set were flagged (§12). Name that limitation in the video instead of hiding it
+
+Pre-test every demo message with `python -m src.predict` before recording. Parcel and government-impersonation scams with a link are the reliable smishing examples (caught 16 of 16 in the Singapore set).
 
 Bookend with a short framing of the problem and a closing view of the metrics table and confusion matrix.
 
@@ -227,7 +232,7 @@ whatever is present, so it degrades to a two-class spam filter if they are missi
 ## 12. Open items
 
 - [ ] Add the DistilBERT rung — needs `transformers` and `torch` (~2.5 GB install)
-- [ ] Swap the leave-one-out explainer for LIME or SHAP. The current probe returns
+- [x] Swap the leave-one-out explainer for LIME or SHAP. The current probe returns
       nothing on saturated predictions, because dropping one word from a 99%-confident
       message does not move the score
 - [ ] Get a `TELEGRAM_BOT_TOKEN` from @BotFather and run the bot end to end on a phone
@@ -235,6 +240,18 @@ whatever is present, so it degrades to a two-class spam filter if they are missi
       confirm the model id in `scam_type.MODEL` is current, and check the enrichment
       against real messages
 - [ ] Tune the spam↔smishing boundary — it is where almost all remaining error sits
-- [ ] Replace the placeholder scam-loss figure in §1 with a cited number from the
+      (the cost-matrix operating point was tried; see §4 Evaluation framing)
+- [x] Collect a small Singapore smishing set (30–50 real messages, evaluation only).
+      The shift set measures false alarms on local ham but nothing measures misses on
+      local scams, and a typical SingPost parcel scam is currently classified as ham
+- [x] Install the Tesseract binary (not on this machine) or drop the screenshot step
+      from the demo
+- [x] Replace the placeholder scam-loss figure in §1 with a cited number from the
       SPF annual scams statistics
+- [x] Technical writeup (Claude Docs; exported to `Smishing_Triage_Writeup.pdf`)
+- [ ] Version 2 (future work, not pursued): local *training* data — genuine
+      transactional SMS from banks and SingPost as ham, conversation-stage scams as
+      smishing. Not pursued because public data for these message types is very small
+      compared with the rest (mostly screenshots, often Chinese, bank notifications
+      rarely published). Collected separately; the Singapore scam set must stay unseen
 - [ ] Record the demo video

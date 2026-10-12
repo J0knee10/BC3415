@@ -6,7 +6,7 @@ or which rung of the ladder won.
 
     >>> from src.predict import predict
     >>> predict("Your DBS account is locked. Verify at http://bit.ly/x9")
-    Prediction(label='spam', confidence=0.97, red_flags=[...])
+    Prediction(label='smishing', confidence=0.99, red_flags=[...])
 
 From the command line::
 
@@ -22,6 +22,7 @@ from functools import lru_cache
 import joblib
 import pandas as pd
 
+from . import evaluate as ev
 from . import features as ft
 from .config import CFG
 from .preprocess import normalise_text
@@ -87,18 +88,25 @@ def predict_batch(messages: list[str], explain: bool = False) -> list[Prediction
 
     if hasattr(model, "predict_proba"):
         probs = model.predict_proba(X)
+        # Serve the operating point src.train chose on validation, so the
+        # verdict a user sees is the one the test metrics describe.
+        if getattr(model, "decision_rule_", "argmax") == "min_cost":
+            labels = ev.min_cost_predict(probs, classes)
     else:  # an uncalibrated estimator — fall back to a hard 1.0
         probs = [[1.0 if c == lab else 0.0 for c in classes] for lab in labels]
 
     out = []
     for i, label in enumerate(labels):
+        label = str(label)
         scores = {c: float(probs[i][j]) for j, c in enumerate(classes)}
+        # Red flags only make sense for a warning; a legitimate message has none.
+        flagged = explain and label != "ham"
         out.append(
             Prediction(
-                label=str(label),
-                confidence=scores[str(label)],
+                label=label,
+                confidence=scores[label],
                 scores=scores,
-                red_flags=explain_tokens(messages[i], str(label)) if explain else [],
+                red_flags=explain_tokens(messages[i], label) if flagged else [],
             )
         )
     return out
@@ -109,30 +117,59 @@ def predict(message: str, explain: bool = True) -> Prediction:
     return predict_batch([message], explain=explain)[0]
 
 
-def explain_tokens(message: str, label: str, top: int = 5) -> list[str]:
-    """Words that pushed the message towards its predicted class.
+# Punctuation trimmed from a token's ends for display, so 'customs.' reads as
+# 'customs'. Tokens themselves are whitespace-delimited, which keeps a URL
+# whole: 'bit.ly/x9' is one red flag, not three.
+_TRIM = ".,!?:;\"'()[]"
 
-    A leave-one-out probe: drop each word, re-score, and keep the words whose
-    removal costs the most confidence. It needs no extra dependency and works
-    on any estimator with ``predict_proba``, which makes it a usable default
-    until LIME or SHAP is wired in for the report.
+
+def explain(message: str, label: str, num_samples: int = 1000):
+    """LIME explanation of one verdict, returned as LIME's own object.
+
+    LIME perturbs the message by deleting random subsets of words, scores
+    every variant with the real model, and fits a small weighted linear model
+    to those scores. Each word's weight is its estimated push towards
+    ``label``. Deleting *many* words at once is what lets it explain a 99%
+    confident prediction, where removing any single word moves nothing.
+
+    The notebook uses this directly for figures; the bot goes through
+    ``explain_tokens``.
+    """
+    from lime.lime_text import LimeTextExplainer
+
+    model = load_model()
+    classes = list(model.classes_)
+    explainer = LimeTextExplainer(
+        class_names=classes,
+        split_expression=r"\s+",
+        random_state=CFG.split["random_state"],  # same flags every time
+    )
+    return explainer.explain_instance(
+        message,
+        lambda texts: model.predict_proba(_frame(list(texts))),
+        labels=[classes.index(label)],
+        num_features=10,
+        num_samples=num_samples,
+    )
+
+
+def explain_tokens(message: str, label: str, top: int = 5) -> list[str]:
+    """The words that pushed the message towards its predicted class, by LIME.
+
+    Only positive evidence is kept, and only above a small floor so that noise
+    from the sampling does not surface as a flag.
     """
     model = load_model()
-    words = message.split()
-    if len(words) < 2 or label not in list(model.classes_):
+    if len(message.split()) < 2 or label not in list(model.classes_):
         return []
 
     col = list(model.classes_).index(label)
-    base = model.predict_proba(_frame([message]))[0][col]
-
-    variants = [" ".join(words[:i] + words[i + 1 :]) for i in range(len(words))]
-    dropped = model.predict_proba(_frame(variants))[:, col]
-
-    # A large drop means the word was holding the prediction up.
-    contributions = sorted(
-        ((base - float(p), w) for p, w in zip(dropped, words)), reverse=True
-    )
-    return [w for delta, w in contributions[:top] if delta > 0.01]
+    flags: list[str] = []
+    for word, weight in explain(message, label).as_list(label=col):
+        word = word.strip(_TRIM)
+        if weight > 0.01 and word and word not in flags:
+            flags.append(word)
+    return flags[:top]
 
 
 def main(argv: list[str]) -> int:

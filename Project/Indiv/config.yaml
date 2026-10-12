@@ -48,9 +48,19 @@ cost_matrix:
   spam:     {ham: 0, spam: 0,  smishing: 1}
   smishing: {ham: 20, spam: 10, smishing: 0}
 
+# How calibrated probabilities become a verdict.
+#   argmax    the most probable class
+#   min_cost  the class with the lowest expected cost under cost_matrix
+# src.train scores both on validation and on the Singapore shift set and
+# writes reports/operating_point_val.csv, so the choice is made with the
+# evidence in view. The matrix alone prefers min_cost, but it prices a false
+# scam alarm on a real message at only 2, and min_cost raises false alarms on
+# Singaporean ham about eightfold. For a checker people must trust, argmax.
+operating_point: argmax
+
 evaluate:
   # Bootstrap resamples used for confidence intervals on the smishing metrics.
-  # The smishing test set is small (~128 messages), so a point estimate alone
+  # The smishing test set is small (~100 messages), so a point estimate alone
   # would overstate precision.
   bootstrap_n: 2000
   bootstrap_alpha: 0.05

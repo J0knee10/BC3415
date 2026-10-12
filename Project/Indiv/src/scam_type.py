@@ -146,6 +146,8 @@ def describe(prediction: Prediction, scam: ScamType | None) -> str:
         pretty = scam.scam_type.replace("_", " ").title()
         lines.append(f"\nLooks like: {pretty}")
         lines.append(scam.explanation)
+        if scam.indicators:
+            lines.append("Watch for: " + ", ".join(f'"{s}"' for s in scam.indicators))
 
     return "\n".join(lines)
 
