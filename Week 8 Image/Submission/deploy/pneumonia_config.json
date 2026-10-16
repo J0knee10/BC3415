@@ -1,0 +1,26 @@
+{
+  "model": "pneumonia_cnn.keras",
+  "img_size": 150,
+  "geometry": "centre_crop",
+  "clahe": {
+    "clipLimit": 2.0,
+    "tileGridSize": [
+      8,
+      8
+    ]
+  },
+  "threshold": 0.54,
+  "classes": [
+    "NORMAL",
+    "PNEUMONIA"
+  ],
+  "test_metrics": {
+    "F1 (pneumonia)": 0.8671,
+    "macro-F1": 0.7697,
+    "accuracy": 0.8109,
+    "precision (pneumonia)": 0.7731,
+    "recall (pneumonia)": 0.9872,
+    "recall (normal)": 0.5171,
+    "errors": 118.0
+  }
+}

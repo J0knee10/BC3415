@@ -1,0 +1,26 @@
+# BC3415 Week 8 - W6-01 CNN (Plain Vanilla) Pneumonia v003
+# Versions used for the executed run of the submitted notebook. Python 3.13.15, Windows 11, CPU only.
+#
+#   pip install -r requirements.txt
+#
+# Google Colab already has everything except kagglehub; the notebook's first cell installs it.
+
+tensorflow==2.21.0
+keras==3.15.1
+numpy==2.5.4
+pandas==3.0.6
+scikit-learn==1.9.1
+scipy==1.18.1
+opencv-python-headless==5.0.0.93
+pillow==12.3.0
+matplotlib==3.11.2
+seaborn==0.13.2
+kagglehub==1.0.2
+
+# To open and run the notebook
+ipykernel==7.4.0
+nbconvert==7.17.2
+notebook
+
+# Optional - only for the web demo (RUN_GRADIO = True, or `python predict.py --web`)
+# gradio
