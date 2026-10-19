@@ -10,8 +10,9 @@ to see how that step works.
     python main.py --demo "message"     classify a single message
     python main.py --skip-download      reuse data already on disk
 
-Two pipelines live here. Stages 1-4 are the **training pipeline**: they run
-offline and end with a model file. Stage 5 is the **serving path**: it loads
+Two pipelines live here. Stages 1-5 are the **training pipeline** and its
+checks: they run offline and end with a model file. Stage 6 is the **serving
+path**: it loads
 that file and answers messages. The Telegram bot (``python -m app.bot``) is
 the serving path with a chat interface in front of it.
 """
@@ -37,7 +38,8 @@ def stage_download() -> None:
 
     UCI and NUS download automatically. Both Mendeley sets sit behind a bot
     check, so they are fetched by hand once; this step reports which are
-    missing rather than failing, and the pipeline runs on whatever is present.
+    missing rather than failing; preprocessing then stops unless a two-class
+    model is asked for explicitly.
     """
     banner(1, "DOWNLOAD", "four corpora + Tesseract language data → data/raw/")
 
@@ -47,8 +49,9 @@ def stage_download() -> None:
     fetch_tessdata()
     if not check_manual():
         print(
-            "\n  Note: without the Mendeley sets there is no smishing class, "
-            "so the pipeline\n  degrades to a two-class spam filter."
+            "\n  Note: without the Mendeley sets there is no smishing class; "
+            "preprocessing will\n  stop rather than overwrite the three-class "
+            "model (use --allow-two-class to override)."
         )
 
 
@@ -65,7 +68,7 @@ def stage_preprocess() -> None:
 
     from src.preprocess import build
 
-    build()
+    build(allow_missing_target="--allow-two-class" in sys.argv[1:])
 
 
 # --- Stage 3 ------------------------------------------------------------
@@ -85,21 +88,37 @@ def stage_train() -> None:
 
 # --- Stage 4 ------------------------------------------------------------
 def stage_ablation() -> None:
-    """Does the LLM-generated augmentation actually help?
+    """Does the LLM-generated corpus help, or should it stay excluded?
 
-    Most of the training smishing examples are synthetic, which raises a
-    question the headline metric cannot answer: is the model learning smishing,
-    or the generator's style? This fits the same pipeline with and without
-    them and compares on real messages only.
+    The served model trains on real messages only (``train.use_synthetic`` in
+    config.yaml). This fits the champion pipeline with and without the
+    generated rows and compares them on real validation messages, which is the
+    evidence for that setting.
     """
-    banner(4, "ABLATION", "is the synthetic augmentation earning its place?")
+    banner(4, "ABLATION", "real-only training vs. adding the LLM-generated corpus")
 
-    from src.ablation import run
+    from src.ablation import repeated, run
+
+    run()
+    repeated()
+
+
+# --- Stage 5 ------------------------------------------------------------
+def stage_robustness() -> None:
+    """Does the verdict survive the perturbations scammers actually use?
+
+    Constructed variants of a few messages: leetspeak spellings, a link with
+    and without ``http://``, harmless links, chat-style scams. Reported as
+    behaviour, not accuracy, in ``reports/robustness_probes.csv``.
+    """
+    banner(5, "ROBUSTNESS", "obfuscation, link form, harmless links")
+
+    from src.robustness import run
 
     run()
 
 
-# --- Stage 5 ------------------------------------------------------------
+# --- Stage 6 ------------------------------------------------------------
 def stage_demo(message: str | None = None) -> None:
     """The serving path — what happens to one message at run time.
 
@@ -108,7 +127,7 @@ def stage_demo(message: str | None = None) -> None:
     ``scam_type.enrich()``, so it runs only on a smishing verdict and
     legitimate messages never leave the machine.
     """
-    banner(5, "SERVE", "predict() → verdict, confidence, red flags → optional enrichment")
+    banner(6, "SERVE", "predict() → verdict, confidence, red flags → optional enrichment")
 
     from src import scam_type
     from src.predict import predict
@@ -145,6 +164,7 @@ STAGES = {
     "preprocess": stage_preprocess,
     "train": stage_train,
     "ablation": stage_ablation,
+    "robustness": stage_robustness,
     "demo": stage_demo,
 }
 
@@ -165,6 +185,11 @@ def main(argv: list[str]) -> int:
     parser.add_argument(
         "--skip-download", action="store_true", help="reuse data already on disk"
     )
+    parser.add_argument(
+        "--allow-two-class",
+        action="store_true",
+        help="build a ham/spam-only model if the Mendeley smishing data is missing",
+    )
     args = parser.parse_args(argv[1:])
 
     if args.demo:
@@ -181,6 +206,7 @@ def main(argv: list[str]) -> int:
     stage_preprocess()
     stage_train()
     stage_ablation()
+    stage_robustness()
     stage_demo()
 
     print(f"\n{'=' * 72}\n  done — `python -m app.bot` to run the Telegram front end\n")

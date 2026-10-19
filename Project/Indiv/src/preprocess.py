@@ -22,7 +22,8 @@ Three decisions in here matter more than the code:
    on its own: scam campaigns send one template with a different phone number
    or prize amount each time, and those variants survive it. The split is
    therefore made over *templates* (the normalised text), so every variant of
-   a template lands on the same side.
+   a template lands on the same side, and then any training row that is a
+   near-copy of a held-out message (a paraphrase, a changed word) is dropped.
 """
 
 from __future__ import annotations
@@ -30,7 +31,9 @@ from __future__ import annotations
 import re
 import sys
 
+import numpy as np
 import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 
 from .config import CFG
@@ -131,6 +134,62 @@ def _group_split(
     return df[df[GROUP].isin(set(keep))], df[df[GROUP].isin(set(hold))]
 
 
+def near_duplicates(
+    candidates: pd.Series,
+    reference: pd.Series,
+    threshold: float | None = None,
+    corpus: pd.Series | None = None,
+) -> np.ndarray:
+    """Mask of ``candidates`` that nearly duplicate any message in ``reference``.
+
+    Exact templates are not enough: real corpora carry the same scam with a
+    reworded phrase, a different reference number or a trailing sentence, and
+    none of these share a normalised template. ``near_copies`` runs this on
+    both text columns.
+
+    Similarity is cosine over character 3-5-gram TF-IDF. At the configured
+    threshold (0.7) every pair inspected was the same message with a word or
+    number changed; below it, pairs start to be merely similar topics.
+
+    ``corpus`` fixes the TF-IDF weights. The pipeline passes the whole
+    deduplicated corpus, so a pair's similarity does not depend on which other
+    messages happen to be compared alongside it.
+    """
+    threshold = CFG.split["near_dup_threshold"] if threshold is None else threshold
+    if len(candidates) == 0 or len(reference) == 0:
+        return np.zeros(len(candidates), dtype=bool)
+
+    vec = TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5), sublinear_tf=True)
+    vec.fit((pd.concat([candidates, reference]) if corpus is None else corpus).astype(str))
+    ref = vec.transform(reference.astype(str)).T.tocsc()
+    cand = vec.transform(candidates.astype(str))
+
+    best = np.zeros(cand.shape[0])
+    for start in range(0, cand.shape[0], 2000):  # chunked to bound memory
+        block = (cand[start : start + 2000] @ ref).max(axis=1)
+        best[start : start + 2000] = block.toarray().ravel()
+    return best >= threshold
+
+
+def near_copies(
+    candidates: pd.DataFrame, reference: pd.DataFrame, corpus: pd.DataFrame | None = None
+) -> np.ndarray:
+    """Near-duplicates by raw text *or* by normalised text.
+
+    Raw text catches reworded copies; normalised text (numbers, URLs and
+    amounts replaced by tokens) catches the same campaign sent with a
+    different phone number or prize, whose digits otherwise dilute the
+    similarity below the threshold.
+    """
+    raw = near_duplicates(
+        candidates["text"], reference["text"], corpus=None if corpus is None else corpus["text"]
+    )
+    clean = near_duplicates(
+        candidates[GROUP], reference[GROUP], corpus=None if corpus is None else corpus[GROUP]
+    )
+    return raw | clean
+
+
 def split(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
     """Stratified, template-aware train/val/test split.
 
@@ -141,9 +200,10 @@ def split(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
     * **NUS rows** form a separate Singapore shift set rather than being mixed
       in, so the local-shift result is a clean comparison and not an average.
 
-    No template is allowed on both sides of a boundary: synthetic rows that
-    share a template with validation or test are dropped, and so are shift
-    rows that share one with train.
+    No message is allowed on both sides of a boundary, by template or by near
+    copy: training rows (real or synthetic) that nearly duplicate a validation
+    or test message are dropped, and so are shift rows that nearly duplicate a
+    training message.
     """
     cfg = CFG.split
 
@@ -154,17 +214,24 @@ def split(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
     train, test = _group_split(pool, cfg["test_size"], cfg["stratify"])
     train, val = _group_split(train, cfg["val_size"], cfg["stratify"])
 
-    held_out = set(val[GROUP]) | set(test[GROUP])
-    synthetic = df[is_synthetic]
-    synthetic_ok = synthetic[~synthetic[GROUP].isin(held_out)]
-    print(f"  synthetic rows dropped (template in val/test): {len(synthetic) - len(synthetic_ok):,}")
+    # Generated rows can only join the training split (src.ablation measures
+    # them; train.use_synthetic decides whether the served model uses them).
+    train = pd.concat([train, df[is_synthetic]], ignore_index=True)
 
-    # Synthetic augmentation joins the training split only.
-    train = pd.concat([train, synthetic_ok], ignore_index=True)
+    held_out = pd.concat([val, test])
+    same_template = train[GROUP].isin(set(held_out[GROUP])).to_numpy()
+    leak = same_template | near_copies(train, held_out, corpus=df)
+    dropped = train[leak]
+    print(
+        f"  train rows dropped (near-copy of val/test):     {len(dropped):,}  "
+        f"(synthetic {dropped['source'].isin(SYNTHETIC_SOURCES).sum():,}, "
+        f"real {(~dropped['source'].isin(SYNTHETIC_SOURCES)).sum():,})"
+    )
+    train = train[~leak]
 
     shift_sg = df[is_nus]
-    shift_ok = shift_sg[~shift_sg[GROUP].isin(set(train[GROUP]))]
-    print(f"  shift rows dropped (template in train):        {len(shift_sg) - len(shift_ok):,}")
+    shift_ok = shift_sg[~near_copies(shift_sg, train, corpus=df)]
+    print(f"  shift rows dropped (near-copy of train):       {len(shift_sg) - len(shift_ok):,}")
 
     return {
         "train": train.reset_index(drop=True),
@@ -174,11 +241,27 @@ def split(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
     }
 
 
-def build() -> dict[str, pd.DataFrame]:
-    """Run the whole pipeline and write the splits to ``data/processed``."""
+def build(allow_missing_target: bool = False) -> dict[str, pd.DataFrame]:
+    """Run the whole pipeline and write the splits to ``data/processed``.
+
+    Stops, before writing anything, if no smishing rows were loaded (the
+    Mendeley files are missing): otherwise it would quietly overwrite the
+    three-class splits with ham/spam-only ones, and the next ``src.train``
+    would replace the model. ``allow_missing_target=True`` (or
+    ``--allow-two-class`` on the command line) builds the two-class
+    splits deliberately.
+    """
     print("=== loading ===")
     df = load_all()
     print(f"  total before deduplication: {len(df):,}")
+
+    if CFG.target_label not in set(df["label"]) and not allow_missing_target:
+        raise SystemExit(
+            f"\nNo '{CFG.target_label}' messages loaded — the Mendeley files are "
+            "missing (see `python -m src.download`).\nNothing was written. Run "
+            "`python -m src.preprocess --allow-two-class` to build a ham/spam-only "
+            "model on purpose."
+        )
 
     print("\n=== deduplicating ===")
     df, conflicts = deduplicate(df)
@@ -203,7 +286,7 @@ def build() -> dict[str, pd.DataFrame]:
         print(f"  skipping sg_scams: {exc}")
     else:
         sg["text_clean"] = sg["text"].map(normalise_text)
-        sg = sg[~sg[GROUP].isin(set(splits["train"][GROUP]))]
+        sg = sg[~near_copies(sg, splits["train"], corpus=df)]
         splits["sg_scams"] = sg.reset_index(drop=True)
 
     for name, frame in splits.items():
@@ -216,5 +299,5 @@ def build() -> dict[str, pd.DataFrame]:
 
 
 if __name__ == "__main__":
-    build()
+    build(allow_missing_target="--allow-two-class" in sys.argv[1:])
     sys.exit(0)

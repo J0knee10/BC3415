@@ -4,3 +4,4 @@ artifacts/
 reports/
 .ipynb_checkpoints/
 tessdata/
+.env

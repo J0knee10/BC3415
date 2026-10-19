@@ -1,14 +1,19 @@
-"""Generates notebooks/walkthrough.ipynb.
+"""Generates and executes notebooks/walkthrough.ipynb.
 
 The notebook is a thin narrative over ``src/`` — it imports and calls, it does
 not reimplement. Keeping it generated means it cannot drift from the modules,
 and the committed .ipynb stays reviewable.
 
-    python build_notebook.py
+    python build_notebook.py               write the cells, then run them all
+    python build_notebook.py --no-execute  write the cells only
+
+Running it retrains the model from data/raw/ (a few minutes), exactly as
+``python main.py --skip-download`` does.
 """
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import nbformat as nbf
@@ -118,7 +123,7 @@ for key, group in list(conflicts.groupby("_k"))[:3]:
 md("""
 ## 2. Preprocessing — `src/preprocess.py`
 
-Normalise, deduplicate, split. Four decisions worth noticing:
+Normalise, deduplicate, split. Five decisions worth noticing:
 
 **Placeholders, not deletion.** URLs, phone numbers and amounts become marker
 tokens. Their *presence* is predictive even when the value is not.
@@ -132,6 +137,11 @@ template with a different phone number or prize amount each time; exact
 deduplication keeps every variant. Splitting by row put 27% of test smishing
 beside a sibling in training. Grouping by normalised text keeps each template
 on one side.
+
+**Near-copies are removed too.** Templates miss reworded variants ("it has
+been resent" → "it ingest been resent") and the same campaign with a different
+number. Any training row with character n-gram cosine ≥ 0.7 to a validation or
+test message, on the raw or the number-blanked text, is dropped.
 
 **Synthetic rows are barred from evaluation**, structurally — the LLM-generated
 corpus is forced into the training split and cannot reach validation or test.
@@ -162,13 +172,16 @@ md("""
 Four rungs, cheapest first. Each is scored on **validation**; the test set is
 spent once, at the end, by the selected model only.
 
-1. TF-IDF + Multinomial Naive Bayes — the floor
+1. Word counts + Multinomial Naive Bayes — the floor
 2. TF-IDF + Logistic Regression — linear baseline, readable coefficients
-3. **Character n-grams + calibrated LinearSVC** — the obfuscation handler
+3. **Character n-grams + calibrated LinearSVC** — spelling- and link-shape features
 4. Word + character features combined
 
-Selection is on macro F1 with smishing recall as the tiebreak, applied
-mechanically rather than by eye. The ladder is the deliverable as much as the
+Selection is on macro F1 with smishing recall as the tiebreak, among the rungs
+that flag at most 1% of real Singaporean messages, applied mechanically rather
+than by eye. Rungs within noise of each other on macro F1 differ tenfold on
+false alarms, which macro F1 cannot see; the cap was set with the validation
+results in view. The ladder is the deliverable as much as the
 final model is: one model with a good number says nothing about whether a
 simpler one would have done.
 """)
@@ -229,8 +242,9 @@ md("""
 
 The NUS shift set only measures false alarms. To measure *misses* on local
 scams, a small evaluation-only set of scam texts sent to people in Singapore
-was collected verbatim from public sources (SPF, ScamShield, bank advisories,
-news), one source URL per message. It never touches training or selection.
+was collected from SPF advisories, Mothership and archived ScamAlert stories,
+one source URL per message (51 of the 60 scams transcribed from screenshots
+with AI assistance). It never touches training or selection.
 """)
 
 code("""
@@ -247,11 +261,14 @@ else:
 
 # ---------------------------------------------------------------- ablation
 md("""
-## 4. Is the synthetic augmentation earning its place? — `src/ablation.py`
+## 4. Does the LLM-generated corpus help? — `src/ablation.py`
 
-Most training smishing examples are LLM-generated, which raises a question the
-headline metric cannot answer: is the model learning smishing, or the
-generator's style?
+The corpus is mostly reworded copies of the other corpora. On the single
+validation split it appears to help, but over six repeated template splits of
+the non-test data it makes no reliable difference (recall +0.02 on average,
+macro F1 unchanged), so the served model trains on real data only
+(`train.use_synthetic: false`). The repeated splits also show how much one
+split can mislead: real-only recall ranges from 0.54 to 0.91 across them.
 
 The comparison runs on **validation and the Singapore shift set only** — both
 real messages. Spending the test set to choose an augmentation setting would be
@@ -259,9 +276,40 @@ exactly the leak the evaluation design exists to prevent.
 """)
 
 code("""
-from src.ablation import run as ablation_run
+from src.ablation import repeated, run as ablation_run
 
 ablation = ablation_run()
+repeats = repeated()
+""")
+
+# ---------------------------------------------------------------- robustness
+md("""
+## 4b. Robustness probes — `src/robustness.py`
+
+The test set measures messages like the training data. These constructed
+variants ask what it cannot: do leetspeak spellings (`DB5`, `acc0unt`) survive,
+does the verdict hinge on `http://`, and is a harmless link called a scam?
+They are reported as behaviour, not accuracy.
+""")
+
+code("""
+from src.robustness import run as robustness_run
+
+probes = robustness_run()
+""")
+
+md("""
+### What the model relies on overall
+
+LIME explains one message; the averaged linear weights show the global picture.
+The strongest smishing cues are UK premium-rate number prefixes (`08…`, `09…`)
+and `http` — which is why the model transfers poorly to Singapore scams.
+""")
+
+code("""
+top = pd.read_csv(CFG.reports_dir / "top_features.csv")
+for cls, group in top.groupby("class"):
+    print(f"{cls:9}", "  ".join(repr(f) for f in group["feature"].head(8)))
 """)
 
 # ---------------------------------------------------------------- serving
@@ -349,7 +397,7 @@ md("""
 
 Scam *type* labels (delivery, banking impersonation, job offer…) do not exist
 as public labelled message data, so training a scam-type classifier would mean
-inventing the labels — undermining the component the rubric weighs most.
+inventing the labels — undermining the trained classifier's evaluation.
 
 Instead a zero-shot LLM names the type, and **only on messages the trained
 model already flagged as smishing**. The gate lives inside `enrich()`, not in
@@ -380,8 +428,8 @@ md("""
 | Guardrail | false-alarm rate on real Singaporean ham |
 | Front end | `python -m app.bot` — forward a message, get a verdict |
 
-Known limitations are listed in `README.md`; the assignment framing and scope
-boundaries are in `PROJECT_BRIEF.md`.
+Known limitations, scope boundaries and design decisions are in `README.md`
+and the technical writeup.
 """)
 
 NB["cells"] = cells
@@ -393,4 +441,12 @@ NB["metadata"] = {
 out = Path(__file__).parent / "notebooks" / "walkthrough.ipynb"
 out.parent.mkdir(exist_ok=True)
 nbf.write(NB, out)
-print(f"wrote {out} ({len(cells)} cells)")
+print(f"wrote {out.relative_to(Path(__file__).parent)} ({len(cells)} cells)")
+
+if "--no-execute" not in sys.argv[1:]:
+    from nbconvert.preprocessors import ExecutePreprocessor
+
+    print("executing (retrains the model; a few minutes)…")
+    ExecutePreprocessor(timeout=1800).preprocess(NB, {"metadata": {"path": str(out.parent)}})
+    nbf.write(NB, out)
+    print("executed and saved")

@@ -4,14 +4,17 @@ Run with::
 
     python -m src.ablation
 
-The Mendeley balanced corpus is LLM-generated and contributes the large
-majority of the smishing messages in the training split. That raises a
-question the headline metric cannot answer: is the model learning smishing, or
-is it learning the generator's style?
+The Mendeley balanced corpus is published as LLM-generated, but most of it is
+reworded copies of the other corpora. The served model excludes it
+(``train.use_synthetic: false``); this module is the evidence for that setting.
 
-This module answers it by fitting the same pipeline twice — once on the real
-messages alone, once with the synthetic rows added — and comparing both on the
-validation split and on the Singapore shift set.
+It fits the champion pipeline with and without the generated rows and compares
+them twice:
+
+* on the validation split and the Singapore shift set (``run``), and
+* over repeated template splits of the non-test data (``repeated``), because
+  a single split of ~80 smishing messages swings recall by tens of points and
+  one split cannot tell a real effect from luck.
 
 Both comparisons avoid the test split entirely. The test set is spent once, by
 ``src.train``, on the selected model; re-using it here to pick an augmentation
@@ -24,10 +27,12 @@ from __future__ import annotations
 import sys
 
 import pandas as pd
+from sklearn.model_selection import train_test_split
 
 from . import evaluate as ev
 from .config import CFG
 from .datasets import SYNTHETIC_SOURCES
+from .preprocess import GROUP, near_copies
 from .train import FEATURE_COLUMNS, build_ladder, load_splits
 
 
@@ -97,6 +102,58 @@ def run(model_name: str = "svm_char_tfidf") -> pd.DataFrame:
     return board
 
 
+def repeated(model_name: str = "svm_char_tfidf", seeds: int = 6) -> pd.DataFrame:
+    """Real-only vs. with generated rows, over repeated template splits.
+
+    The real training and validation messages are pooled and re-split by
+    template (80/20) once per seed; the test split is never used. Generated
+    rows and training rows that nearly copy a fold's held-out messages are
+    removed, exactly as ``preprocess.split`` does.
+    """
+    splits = load_splits()
+    train, val, test = splits["train"], splits["val"], splits["test"]
+    is_gen = train["source"].isin(SYNTHETIC_SOURCES)
+    generated = train[is_gen]
+    pool = pd.concat([train[~is_gen], val], ignore_index=True)
+    corpus = pd.concat([pool, generated, test], ignore_index=True)  # fixed TF-IDF weights
+    target_recall = f"{CFG.target_label}_recall"
+
+    rows = []
+    for seed in range(seeds):
+        templates = pool.groupby(GROUP)["label"].first()
+        keep, hold = train_test_split(
+            templates.index.to_numpy(), test_size=0.2, random_state=seed,
+            stratify=templates.to_numpy(),
+        )
+        fold_train = pool[pool[GROUP].isin(set(keep))]
+        fold_val = pool[pool[GROUP].isin(set(hold))]
+        fold_train = fold_train[~near_copies(fold_train, fold_val, corpus=corpus)]
+        gen_ok = generated[~near_copies(generated, fold_val, corpus=corpus)]
+
+        for condition, data in [("real_only", fold_train), ("with_generated", pd.concat([fold_train, gen_ok]))]:
+            model = build_ladder()[model_name]
+            model.fit(data[FEATURE_COLUMNS], data["label"])
+            r = ev.summarise(fold_val["label"], model.predict(fold_val[FEATURE_COLUMNS]))
+            rows.append({"seed": seed, "condition": condition, "macro_f1": r["macro_f1"],
+                         target_recall: r.get(target_recall)})
+
+    table = pd.DataFrame(rows)
+    wide = table.pivot(index="seed", columns="condition", values=[target_recall, "macro_f1"])
+    print(f"\n{'=' * 60}\nREPEATED SPLITS — {model_name}, {seeds} template splits, test unused")
+    print(wide.to_string(float_format=lambda v: f"{v:.3f}"))
+    gain = (wide[target_recall]["with_generated"] - wide[target_recall]["real_only"])
+    f1_gain = (wide["macro_f1"]["with_generated"] - wide["macro_f1"]["real_only"])
+    print(
+        f"\ngenerated rows: {CFG.target_label} recall {gain.mean():+.3f} on average "
+        f"(better in {(gain > 0).sum()} of {seeds}), macro F1 {f1_gain.mean():+.3f}"
+    )
+    real = wide[target_recall]["real_only"]
+    print(f"real-only {CFG.target_label} recall ranges {real.min():.2f}–{real.max():.2f} across splits")
+    table.to_csv(CFG.reports_dir / "ablation_repeated.csv", index=False)
+    return table
+
+
 if __name__ == "__main__":
     run()
+    repeated()
     sys.exit(0)

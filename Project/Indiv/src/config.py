@@ -11,12 +11,19 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from dotenv import load_dotenv
 
 # The project root is the directory containing config.yaml, i.e. the parent of
 # this file's parent. Resolved from __file__ so the pipeline runs identically
 # from a notebook, a script or the repo root.
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = ROOT / "config.yaml"
+
+# Credentials (TELEGRAM_BOT_TOKEN, GEMINI_API_KEY) live in a gitignored .env
+# at the project root; see .env.example. Every entry point imports this
+# module, so loading it here covers them all. Variables already set in the
+# shell take precedence over the file.
+load_dotenv(ROOT / ".env", override=False)
 
 
 @dataclass(frozen=True)

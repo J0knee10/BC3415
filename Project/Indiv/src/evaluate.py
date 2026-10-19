@@ -1,8 +1,8 @@
 """Evaluation.
 
 The headline number for this project is **recall on the smishing class**, not
-accuracy. On a corpus that is ~85% ham, a model that predicts ham for
-everything scores 85% accuracy and is worthless. Every function here is built
+accuracy. On a corpus that is ~83% ham, a model that predicts ham for
+everything scores 83% accuracy and is worthless. Every function here is built
 around that.
 
 Also provided:
@@ -71,6 +71,43 @@ def min_cost_predict(proba, classes: list[str]) -> np.ndarray:
     order = [CFG.labels.index(c) for c in classes]
     costs = np.array(CFG.cost_matrix())[np.ix_(order, order)]
     return np.asarray(classes)[(np.asarray(proba) @ costs).argmin(axis=1)]
+
+
+def brier_score(y_true, proba, classes: list[str]) -> float:
+    """Multi-class Brier score: mean squared distance from the one-hot truth.
+
+    0 is perfect; always answering the class frequencies scores far worse.
+    The bot shows the model's probability as a confidence, so it has to mean
+    what it says — this and ``calibration_table`` check that it does.
+    """
+    onehot = (np.asarray(y_true)[:, None] == np.asarray(classes)[None, :]).astype(float)
+    return float(((np.asarray(proba) - onehot) ** 2).sum(axis=1).mean())
+
+
+def calibration_table(y_true, proba, classes: list[str], label: str | None = None, bins: int = 5) -> pd.DataFrame:
+    """Reliability of one class's probability: predicted vs observed, per bin.
+
+    Well calibrated means that of the messages given ~80% smishing, about 80%
+    are smishing.
+    """
+    label = label or CFG.target_label
+    p = np.asarray(proba)[:, list(classes).index(label)]
+    hit = (np.asarray(y_true) == label).astype(float)
+    edges = np.linspace(0, 1, bins + 1)
+    idx = np.clip(np.digitize(p, edges[1:-1]), 0, bins - 1)
+    rows = []
+    for b in range(bins):
+        m = idx == b
+        if m.any():
+            rows.append(
+                {
+                    "bin": f"{edges[b]:.1f}-{edges[b + 1]:.1f}",
+                    "n": int(m.sum()),
+                    f"mean_p_{label}": float(p[m].mean()),
+                    f"observed_{label}": float(hit[m].mean()),
+                }
+            )
+    return pd.DataFrame(rows)
 
 
 def bootstrap_ci(y_true, y_pred, label: str, metric: str = "recall") -> tuple[float, float]:

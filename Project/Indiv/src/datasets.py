@@ -169,9 +169,11 @@ def load_mendeley_smishing() -> pd.DataFrame:
 def load_mendeley_balanced() -> pd.DataFrame:
     """Mendeley Balanced Spam/Smishing (vmg875v4xs) — LLM-generated.
 
-    Train-side augmentation only. ``preprocess`` enforces that these rows
-    never reach the validation or test splits; synthetic text in a test set
-    would measure the generator, not the classifier.
+    Mostly reworded copies of the other corpora. ``preprocess`` keeps these
+    rows out of the validation and test splits (synthetic text in a test set
+    would measure the generator) and removes any that nearly copy a held-out
+    message. The served model does not train on them (``train.use_synthetic``);
+    ``src.ablation`` measures whether they would help.
     """
     df = _read_mendeley_csv(CFG.raw_dir / "mendeley_balanced")
     df["source"] = "mendeley_balanced"
@@ -180,8 +182,10 @@ def load_mendeley_balanced() -> pd.DataFrame:
 
 # --- Singapore scams (evaluation only) ----------------------------------
 def load_sg_scams() -> pd.DataFrame:
-    """Scam messages sent to people in Singapore, quoted verbatim from public
-    sources (SPF, ScamShield, bank advisories, news) — one source URL per row.
+    """Scam messages sent to people in Singapore, from SPF advisories,
+    Mothership and archived ScamAlert stories — one source URL per row. Most
+    sources publish them only as screenshots; those rows were transcribed with
+    AI assistance and the ``notes`` column says so.
 
     No public corpus of local smishing exists, so this small hand-collected
     set is the only measure of *misses* on local scams; the NUS shift set

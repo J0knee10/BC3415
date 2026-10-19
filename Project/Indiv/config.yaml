@@ -26,6 +26,26 @@ split:
   val_size: 0.15        # fraction of the remaining train pool
   random_state: 42
   stratify: true
+  # Training rows whose character n-gram cosine similarity to any validation
+  # or test message reaches this are dropped (see preprocess.near_duplicates).
+  # Template matching alone missed paraphrased variants of held-out messages.
+  near_dup_threshold: 0.7
+
+# --- Training and selection ---------------------------------------------
+train:
+  # The LLM-"generated" Mendeley rows are mostly reworded copies of the other
+  # corpora. They stay in train.csv so src.ablation can measure them; across
+  # repeated template splits (reports/ablation_repeated.csv) they make no
+  # reliable difference, so the served model trains on real messages only.
+  use_synthetic: false
+
+selection:
+  # Highest validation macro F1, with smishing recall as the tiebreak, among
+  # rungs that flag at most this share of the Singapore shift set (real local
+  # ham). Rungs within noise of each other on macro F1 differed tenfold on
+  # false alarms, which macro F1 cannot see. Added after the near-duplicate
+  # fix, with the validation results in view; the test set was not used.
+  max_sg_false_alarm: 0.01
 
 # --- Text normalisation -------------------------------------------------
 # Placeholder tokens replace URLs, phone numbers and money amounts. Their
@@ -55,7 +75,7 @@ cost_matrix:
 # writes reports/operating_point_val.csv, so the choice is made with the
 # evidence in view. The matrix alone prefers min_cost, but it prices a false
 # scam alarm on a real message at only 2, and min_cost raises false alarms on
-# Singaporean ham about eightfold. For a checker people must trust, argmax.
+# Singaporean ham nearly threefold. For a checker people must trust, argmax.
 operating_point: argmax
 
 evaluate:

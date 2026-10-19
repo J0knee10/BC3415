@@ -7,8 +7,8 @@ Run with::
 Four rungs, each a complete pipeline from text to label. Every rung is scored
 on the validation split; the test split is touched **once**, at the end, by the
 selected model only. Selection is on macro F1 with smishing recall as the
-tiebreak — the project's stated priority, applied mechanically rather than by
-eye.
+tiebreak, among the rungs that flag at most 1% of real Singaporean messages —
+applied mechanically rather than by eye.
 
 The ladder is the deliverable as much as the final model is. A single model
 with a good number says nothing about whether a simpler one would have done;
@@ -22,6 +22,7 @@ import json
 import sys
 
 import joblib
+import numpy as np
 import pandas as pd
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.linear_model import LogisticRegression
@@ -31,7 +32,8 @@ from sklearn.svm import LinearSVC
 
 from . import evaluate as ev
 from . import features as ft
-from .config import CFG
+from .config import CFG, ROOT
+from .datasets import SYNTHETIC_SOURCES
 
 FEATURE_COLUMNS = [ft.TEXT_RAW, ft.TEXT_CLEAN]
 
@@ -78,7 +80,7 @@ def build_ladder() -> dict[str, Pipeline]:
                 ),
             ]
         ),
-        # Rung 3 — the obfuscation handler. Expected to lead the classical set.
+        # Rung 3 — character n-grams: spellings, digits and link shapes.
         # LinearSVC has no predict_proba, so it is wrapped in a calibrator;
         # the bot needs a confidence score to show the user.
         "svm_char_tfidf": Pipeline(
@@ -204,9 +206,42 @@ def _evaluate_sg_scams(model: Pipeline, sg: pd.DataFrame, rule: str) -> dict:
     return result
 
 
+def top_features(model: Pipeline, n: int = 15) -> pd.DataFrame:
+    """The n-grams that push hardest towards each class, across the whole model.
+
+    LIME explains one message at a time; this is the global view of what the
+    model has learned. For the calibrated SVM the weights are the linear
+    coefficients averaged over the calibration folds.
+    """
+    clf = model.named_steps["clf"]
+    names = model.named_steps["features"].get_feature_names_out()
+    if hasattr(clf, "calibrated_classifiers_"):
+        coef = np.mean([c.estimator.coef_ for c in clf.calibrated_classifiers_], axis=0)
+    elif hasattr(clf, "coef_"):
+        coef = clf.coef_
+    elif hasattr(clf, "feature_log_prob_"):
+        coef = clf.feature_log_prob_
+    else:
+        return pd.DataFrame()
+
+    rows = []
+    for k, cls in enumerate(clf.classes_):
+        for j in np.argsort(coef[k])[::-1][:n]:
+            # Strip the ColumnTransformer prefix ("char__") for readability.
+            rows.append({"class": cls, "feature": names[j].split("__", 1)[-1], "weight": float(coef[k][j])})
+    return pd.DataFrame(rows)
+
+
 def run() -> pd.DataFrame:
     splits = load_splits()
     train, val, test = splits["train"], splits["val"], splits["test"]
+    shift = splits["shift_sg"]
+
+    # Synthetic rows stay in train.csv for src.ablation; whether the served
+    # model learns from them is a config decision, made on that ablation.
+    if not CFG.raw.get("train", {}).get("use_synthetic", True):
+        train = train[~train["source"].isin(SYNTHETIC_SOURCES)].reset_index(drop=True)
+        print("synthetic rows excluded (train.use_synthetic: false)")
 
     print(f"train {len(train):,}  val {len(val):,}  test {len(test):,}")
     print(f"train class balance: {train['label'].value_counts().to_dict()}\n")
@@ -222,6 +257,10 @@ def run() -> pd.DataFrame:
         y_pred, proba = _predict(model, val)
         row = ev.report(val["label"], y_pred, name=f"{name} [val]")
         row["model"] = name  # the leaderboard keys on the bare name
+        if len(shift):
+            y_shift, _ = _predict(model, shift)
+            row["sg_false_alarm_rate"] = float((y_shift != "ham").mean())
+            print(f"false alarms on Singapore ham: {row['sg_false_alarm_rate']:.4f}")
         leaderboard.append(row)
 
         # What this rung missed, to motivate the next one.
@@ -236,17 +275,33 @@ def run() -> pd.DataFrame:
     board = pd.DataFrame(leaderboard)
 
     # --- selection ------------------------------------------------------
-    # Macro F1, with recall on the target class breaking ties. Done on
-    # validation only; the test split has not been touched yet.
+    # Macro F1, with recall on the target class breaking ties, among the
+    # rungs that stay under the false-alarm cap on Singaporean ham (see
+    # config.yaml). Done on validation and the shift set only; the test split
+    # has not been touched yet.
     target_recall = f"{CFG.target_label}_recall"
     sort_keys = ["macro_f1"] + ([target_recall] if target_recall in board else [])
     board = board.sort_values(sort_keys, ascending=False).reset_index(drop=True)
 
-    print(f"\n{'=' * 60}\nVALIDATION LEADERBOARD")
-    cols = [c for c in ["model", "accuracy", "macro_f1", "expected_cost", target_recall] if c in board]
-    print(board[cols].to_string(index=False, float_format=lambda v: f"{v:.4f}"))
+    cap = CFG.raw.get("selection", {}).get("max_sg_false_alarm")
+    if cap is not None and "sg_false_alarm_rate" in board:
+        board["eligible"] = board["sg_false_alarm_rate"] <= cap
+    else:
+        board["eligible"] = True
 
-    champion_name = board.iloc[0]["model"]
+    print(f"\n{'=' * 60}\nVALIDATION LEADERBOARD")
+    cols = [
+        c
+        for c in ["model", "accuracy", "macro_f1", target_recall, "sg_false_alarm_rate", "eligible"]
+        if c in board
+    ]
+    print(board[cols].to_string(index=False, float_format=lambda v: f"{v:.4f}"))
+    if cap is not None:
+        print(f"eligible = flags at most {cap:.0%} of Singapore ham")
+
+    # If no rung clears the cap, fall back to the plain macro-F1 ranking.
+    pool = board[board["eligible"]] if board["eligible"].any() else board
+    champion_name = pool.iloc[0]["model"]
     champion = fitted[champion_name]
     print(f"\nselected: {champion_name}")
 
@@ -262,6 +317,15 @@ def run() -> pd.DataFrame:
     y_pred, proba = _predict(champion, test, rule)
     test_row = ev.report(test["label"], y_pred, name=f"{champion_name} [test]")
     test_row["operating_point"] = rule
+
+    # Are the confidences the bot shows trustworthy?
+    if proba is not None:
+        classes = list(champion.classes_)
+        test_row["brier_score"] = ev.brier_score(test["label"], proba, classes)
+        calib = ev.calibration_table(test["label"], proba, classes)
+        print(f"\nBrier score {test_row['brier_score']:.4f}  (0 = perfect)")
+        print(calib.to_string(index=False, float_format=lambda v: f"{v:.3f}"))
+        calib.to_csv(CFG.reports_dir / "calibration_test.csv", index=False)
 
     # --- Singapore shift set --------------------------------------------
     # NUS is ham-only, so the question it answers is narrow but sharp: how
@@ -284,12 +348,14 @@ def run() -> pd.DataFrame:
 
     # --- persist --------------------------------------------------------
     joblib.dump(champion, CFG.artifacts_dir / "model.joblib")
+    top_features(champion).to_csv(CFG.reports_dir / "top_features.csv", index=False)
     board.to_csv(CFG.reports_dir / "leaderboard_val.csv", index=False)
     with open(CFG.reports_dir / "test_result.json", "w", encoding="utf-8") as fh:
         json.dump({"champion": champion_name, **test_row}, fh, indent=2, default=str)
     ev.confusion(test["label"], y_pred).to_csv(CFG.reports_dir / "confusion_test.csv")
 
-    print(f"\nsaved model to {CFG.artifacts_dir / 'model.joblib'}")
+    # Relative, so logs and the notebook do not record a local folder path.
+    print(f"\nsaved model to {(CFG.artifacts_dir / 'model.joblib').relative_to(ROOT)}")
     return board
 
 

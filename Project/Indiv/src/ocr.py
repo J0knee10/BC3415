@@ -116,7 +116,16 @@ def image_to_text(path: str | Path, clean: bool = True) -> str:
         )
 
     with Image.open(path) as image:
-        text = pytesseract.image_to_string(_prepare(image))
+        try:
+            text = pytesseract.image_to_string(_prepare(image))
+        except pytesseract.TesseractError as exc:
+            # Usually the English language data is missing; src.download
+            # fetches it into tessdata/.
+            raise RuntimeError(
+                "Tesseract could not run (is the English language data in "
+                "tessdata/? Run `python -m src.download`). Paste the message "
+                "text instead of a screenshot."
+            ) from exc
 
     return clean_ocr_text(text) if clean else text.strip()
 
@@ -131,7 +140,11 @@ def main(argv: list[str]) -> int:
         print("usage: python -m src.ocr <image path>")
         return 1
 
-    text = image_to_text(argv[1])
+    try:
+        text = image_to_text(argv[1])
+    except RuntimeError as exc:
+        print(exc)
+        return 1
     print(f"extracted: {text!r}\n")
 
     from .predict import predict

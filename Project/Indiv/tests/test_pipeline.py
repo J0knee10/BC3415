@@ -14,7 +14,14 @@ import pandas as pd
 import pytest
 
 from src.config import CFG
-from src.preprocess import GROUP, dedup_key, deduplicate, normalise_text, split
+from src.preprocess import (
+    GROUP,
+    dedup_key,
+    deduplicate,
+    near_duplicates,
+    normalise_text,
+    split,
+)
 
 
 # --- normalisation ------------------------------------------------------
@@ -80,6 +87,41 @@ def test_synthetic_and_nus_rows_stay_out_of_evaluation():
     assert (splits["shift_sg"]["source"] == "nus").all()
 
 
+def test_near_duplicates_catches_paraphrase_not_topic():
+    held = pd.Series(["This msg is for your mobile content order It has been resent as previous attempt failed"])
+    cand = pd.Series(
+        [
+            "this msg is for your mobile content order it ingest been resent as previous attempt failed",
+            "Your parcel could not be delivered, update your address at the link",
+        ]
+    )
+    assert near_duplicates(cand, held).tolist() == [True, False]
+
+
+def test_no_training_row_is_a_near_copy_of_held_out():
+    splits = split(_toy_corpus())
+    held = pd.concat([splits["val"]["text"], splits["test"]["text"]])
+    assert not near_duplicates(splits["train"]["text"], held).any()
+
+
+def test_real_splits_have_no_near_copy_across_the_boundary():
+    """The guarantee on the actual data, not just the toy corpus.
+
+    Uses its own TF-IDF weights rather than the pipeline's, so it is an
+    independent check of what preprocess.split() removed. Different weights
+    move a borderline pair by a few hundredths, so the check allows a 0.05
+    margin above the pipeline's 0.7 threshold.
+    """
+    paths = {n: CFG.processed_dir / f"{n}.csv" for n in ["train", "val", "test"]}
+    if not all(p.exists() for p in paths.values()):
+        pytest.skip("no processed splits; run `python -m src.preprocess`")
+    frames = {n: pd.read_csv(p).fillna("") for n, p in paths.items()}
+    held = pd.concat([frames["val"], frames["test"]])
+    for column in ["text", GROUP]:
+        margin = CFG.split["near_dup_threshold"] + 0.05
+        assert not near_duplicates(held[column], frames["train"][column], margin).any()
+
+
 # --- serving ------------------------------------------------------------
 needs_model = pytest.mark.skipif(
     not (CFG.artifacts_dir / "model.joblib").exists(),
@@ -107,6 +149,14 @@ def test_legitimate_message_has_no_red_flags():
 
 
 @needs_model
+def test_empty_message_is_rejected():
+    from src.predict import predict
+
+    with pytest.raises(ValueError):
+        predict("   ")
+
+
+@needs_model
 def test_llm_stage_never_sees_a_non_scam(monkeypatch):
     from src import scam_type
 
@@ -117,3 +167,44 @@ def test_llm_stage_never_sees_a_non_scam(monkeypatch):
     prediction, scam = scam_type.enrich("Eh you reaching already? I order first ah")
     assert prediction.label != CFG.target_label
     assert scam is None
+
+
+@needs_model
+def test_photo_caption_is_classified_when_image_has_no_text(monkeypatch):
+    import asyncio
+    import types
+
+    from app import bot
+
+    replies = []
+
+    async def reply(text, **_):
+        replies.append(text)
+
+    async def send_action(_):
+        pass
+
+    class File:
+        async def download_to_drive(self, path):
+            open(path, "wb").close()
+
+    class Bot:
+        async def get_file(self, _):
+            return File()
+
+    monkeypatch.setattr(bot.scam_type, "classify_scam_type", lambda _m: None)  # no network
+    monkeypatch.setattr(bot.ocr, "tesseract_available", lambda: True)
+    monkeypatch.setattr(bot.ocr, "image_to_text", lambda _path: "")
+    message = types.SimpleNamespace(
+        caption="Your parcel is held at customs. Pay at http://sgpost-clear.co/pay",
+        photo=[types.SimpleNamespace(file_id="x")],
+        chat=types.SimpleNamespace(send_action=send_action),
+        reply_text=reply,
+    )
+    update = types.SimpleNamespace(effective_message=message)
+    asyncio.run(bot.on_photo(update, types.SimpleNamespace(bot=Bot())))
+
+    assert len(replies) == 1
+    # A scam verdict, not merely the word "scam" ("No scam signals found"
+    # contains it too).
+    assert replies[0].startswith("⚠️ Likely scam")

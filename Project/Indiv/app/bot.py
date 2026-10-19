@@ -2,9 +2,10 @@
 
 Run with::
 
-    TELEGRAM_BOT_TOKEN=... python -m app.bot
+    python -m app.bot
 
-Get a token from @BotFather in Telegram. The bot runs on a laptop with no
+with ``TELEGRAM_BOT_TOKEN`` set in ``.env`` (see ``.env.example``) or in the
+shell. Get a token from @BotFather in Telegram. The bot runs on a laptop with no
 approval process and no registered phone number, which is why it is the demo
 channel rather than WhatsApp — WhatsApp is end-to-end encrypted with no read
 API, so a bot there would need a Meta Business account and still only see
@@ -18,6 +19,7 @@ retaining anyone's personal messages.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import sys
@@ -35,19 +37,22 @@ from telegram.ext import (
 
 from src import ocr, scam_type
 from src.config import CFG
-from src.predict import load_model, predict
+from src.predict import load_model
 
 # Message bodies are deliberately absent from this format string.
 logging.basicConfig(
     format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO
 )
 log = logging.getLogger("smishing-bot")
+# httpx logs every request URL at INFO, and Telegram's API puts the bot token
+# in the URL. Keep it out of the console and any log file.
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 WELCOME = (
     "👋 *Smishing Triage*\n\n"
     "Forward me a suspicious SMS or WhatsApp message — or a screenshot of one — "
-    "and I'll tell you whether it looks legitimate, like marketing spam, or "
-    "like a scam, and which words made me think so.\n\n"
+    "and I'll tell you whether it shows signs of a scam, looks like marketing "
+    "spam, or shows no scam signals, and which words made me think so.\n\n"
     "I never store your messages."
 )
 
@@ -66,8 +71,11 @@ async def _respond(update: Update, message: str) -> None:
 
     The trained model decides; the LLM stage only names a scam type, and only
     when the model already said smishing (the gate lives in ``scam_type``).
+    The model, LIME and the Gemini call are blocking, so they run in a worker
+    thread rather than stalling every other chat while one is classified.
     """
-    prediction, scam = scam_type.enrich(message)
+    await update.effective_message.chat.send_action("typing")
+    prediction, scam = await asyncio.to_thread(scam_type.enrich, message)
 
     log.info(
         "classified len=%d label=%s conf=%.2f enriched=%s",
@@ -85,33 +93,41 @@ async def on_text(update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def on_photo(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    """Screenshot path: download, OCR, then the same classifier."""
-    if not ocr.tesseract_available():
-        await update.effective_message.reply_text(
+    """Screenshot path: OCR the image, add any caption, then the same classifier.
+
+    A forwarded message can carry both an image and text (the caption), and
+    the scam may sit in either. Both are classified together; if the image
+    has no readable text, or OCR is unavailable, the caption alone is used.
+    """
+    msg = update.effective_message
+    caption = (msg.caption or "").strip()
+    image_text = ""
+
+    if ocr.tesseract_available():
+        await msg.chat.send_action("typing")
+        # Highest resolution Telegram offers; OCR quality depends on it.
+        photo = await ctx.bot.get_file(msg.photo[-1].file_id)
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "shot.jpg"
+            await photo.download_to_drive(path)
+            try:
+                image_text = await asyncio.to_thread(ocr.image_to_text, path)
+            except RuntimeError:
+                image_text = ""
+    elif not caption:
+        await msg.reply_text(
             "Screenshot reading is unavailable on this server — "
             "paste the message as text instead."
         )
         return
 
-    await update.effective_message.chat.send_action("typing")
-
-    # Highest resolution Telegram offers; OCR quality depends on it.
-    photo = await ctx.bot.get_file(update.effective_message.photo[-1].file_id)
-
-    with tempfile.TemporaryDirectory() as tmp:
-        path = Path(tmp) / "shot.jpg"
-        await photo.download_to_drive(path)
-        try:
-            text = ocr.image_to_text(path)
-        except RuntimeError as exc:
-            await update.effective_message.reply_text(str(exc))
-            return
-
-    if not text:
-        await update.effective_message.reply_text(NO_TEXT)
+    if not image_text and not caption:
+        await msg.reply_text(NO_TEXT)
         return
 
-    await update.effective_message.reply_text(f'I read: "{text}"')
+    if image_text:
+        await msg.reply_text(f'I read from the image: "{image_text}"')
+    text = "\n".join(t for t in [caption, image_text] if t)
     await _respond(update, text)
 
 
@@ -120,9 +136,9 @@ def main() -> int:
     if not token:
         print(
             "TELEGRAM_BOT_TOKEN is not set.\n"
-            "Create a bot with @BotFather in Telegram, then:\n"
-            "  export TELEGRAM_BOT_TOKEN=...   (bash)\n"
-            '  $env:TELEGRAM_BOT_TOKEN="..."   (PowerShell)',
+            "Create a bot with @BotFather in Telegram, then put the token in\n"
+            ".env at the project root (copy .env.example):\n"
+            "  TELEGRAM_BOT_TOKEN=...",
             file=sys.stderr,
         )
         return 1
@@ -135,6 +151,8 @@ def main() -> int:
             "GEMINI_API_KEY not set — scam-type enrichment disabled, "
             "the classifier still runs"
         )
+    else:
+        log.info("scam-type enrichment on — model %s", scam_type.MODEL)
 
     app = Application.builder().token(token).build()
     app.add_handler(CommandHandler("start", cmd_start))

@@ -1,13 +1,15 @@
 """Feature builders.
 
-Every model in the ladder consumes a DataFrame with two text columns, so the
-vectorisers are wired up with a ColumnTransformer rather than a bare
-vectoriser. That keeps the choice visible: word features read the normalised
-text, character features read the original.
+Every model in the ladder is handed a DataFrame with two text columns, and
+each vectoriser is wired up with a ColumnTransformer that picks the column it
+needs. That keeps the choice visible: word features read the normalised text,
+character features read the original.
 
 Why character n-grams matter here: smishing obfuscates deliberately
 (``acc0unt``, ``DB5``, ``bit.ly/xY2`` ) and word tokenisation destroys exactly
-the evidence that gives it away. Character spans survive it.
+the evidence that gives it away. Character spans survive it — the robustness
+probes (``src.robustness``) show leetspeak spellings are still caught, though a
+link without ``http://`` is not.
 """
 
 from __future__ import annotations
@@ -40,12 +42,12 @@ def word_features(ngram_range=(1, 2), min_df=2, max_features=50_000) -> ColumnTr
 
 
 def char_features(ngram_range=(2, 5), min_df=2, max_features=100_000) -> ColumnTransformer:
-    """Character n-grams over the *raw* text — the obfuscation handler.
+    """Character n-grams over the *raw* text — spellings and link shapes.
 
     ``lowercase=False`` keeps case as a feature: shouted CTAs ("URGENT",
     "WIN") and brand spellings ("DBS", "DB5") are signal. TfidfVectorizer
-    lowercases by default, which would quietly discard it; on validation,
-    keeping case lifted macro F1 from 0.936 to 0.945.
+    lowercases by default, which would quietly discard it. On validation the
+    difference between keeping and dropping case is within noise.
     """
     return ColumnTransformer(
         [

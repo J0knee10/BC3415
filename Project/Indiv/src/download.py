@@ -53,7 +53,7 @@ MANUAL_SOURCES = {
     "mendeley_balanced": {
         "page": "https://data.mendeley.com/datasets/vmg875v4xs/1",
         "what": "A Balanced Dataset for Spam and Smishing Detection using LLMs",
-        "why": "train-side augmentation only — LLM-generated, never used for testing",
+        "why": "measured by src.ablation only — LLM-generated, excluded from the served model",
         "expect": "a .csv file of spam / smishing messages",
     },
 }

@@ -6,7 +6,7 @@ or which rung of the ladder won.
 
     >>> from src.predict import predict
     >>> predict("Your DBS account is locked. Verify at http://bit.ly/x9")
-    Prediction(label='smishing', confidence=0.99, red_flags=[...])
+    Prediction(label='smishing', confidence=0.97, red_flags=[...])
 
 From the command line::
 
@@ -48,13 +48,20 @@ class Prediction:
         """User-facing one-liner, as the bot would send it."""
         icon = {"ham": "✅", "spam": "📣", "smishing": "⚠️"}.get(self.label, "•")
         headline = {
-            "ham": "Looks legitimate",
+            "ham": "No scam signals found",
             "spam": "Marketing / spam",
             "smishing": "Likely scam",
         }.get(self.label, self.label)
         line = f"{icon} {headline} ({self.confidence:.0%})"
         if self.red_flags:
             line += "\nFlagged on: " + ", ".join(f"'{w}'" for w in self.red_flags)
+        if self.label == "ham":
+            # Not an all-clear: about half of real local scams, mostly
+            # chat-style ones with no link, get this verdict (writeup §5).
+            line += (
+                "\nThis is not a guarantee. If it asks for money, a code or a "
+                "login, check with the sender on a number you already trust."
+            )
         return line
 
 
@@ -79,7 +86,13 @@ def _frame(messages: list[str]) -> pd.DataFrame:
 
 
 def predict_batch(messages: list[str], explain: bool = False) -> list[Prediction]:
-    """Classify several messages at once. The bot path uses this with one."""
+    """Classify several messages at once. The bot path uses this with one.
+
+    Raises ValueError on an empty message: the model would otherwise call
+    nothing at all "legitimate" with high confidence.
+    """
+    if any(not str(m).strip() for m in messages):
+        raise ValueError("cannot classify an empty message")
     model = load_model()
     X = _frame(messages)
 
@@ -122,6 +135,18 @@ def predict(message: str, explain: bool = True) -> Prediction:
 # whole: 'bit.ly/x9' is one red flag, not three.
 _TRIM = ".,!?:;\"'()[]"
 
+# Function words LIME can pick up because they co-occur with the real cue
+# ("Your account…"). They explain nothing to a user, so they are never shown
+# as a red flag. Deliberately short: words like "free", "call" and "now" are
+# real spam cues and stay (sklearn's English stop list would remove them).
+_NOT_A_FLAG = {
+    "a", "an", "the", "and", "or", "but", "if", "so", "as", "of", "to", "in",
+    "on", "at", "by", "for", "from", "with", "this", "that", "these", "it",
+    "is", "are", "was", "were", "be", "been", "being", "have", "has", "had",
+    "do", "does", "will", "would", "can", "could", "i", "me", "my", "we", "us",
+    "our", "you", "your", "he", "she", "they", "them", "their", "its",
+}
+
 
 def explain(message: str, label: str, num_samples: int = 1000):
     """LIME explanation of one verdict, returned as LIME's own object.
@@ -156,20 +181,37 @@ def explain(message: str, label: str, num_samples: int = 1000):
 def explain_tokens(message: str, label: str, top: int = 5) -> list[str]:
     """The words that pushed the message towards its predicted class, by LIME.
 
-    Only positive evidence is kept, and only above a small floor so that noise
-    from the sampling does not surface as a flag.
+    Only positive evidence is kept, only above a small floor so that noise
+    from the sampling does not surface as a flag, and never a bare function
+    word (see ``_NOT_A_FLAG``) or a bare number: "482913" or "12" tells a
+    user nothing, while an amount such as "£100,000" stays.
+
+    A one-word message cannot be explained by deleting words, so the word
+    itself is the flag.
     """
     model = load_model()
-    if len(message.split()) < 2 or label not in list(model.classes_):
+    if label not in list(model.classes_):
         return []
+    tokens = message.split()
+    if len(tokens) < 2:
+        word = tokens[0].strip(_TRIM) if tokens else ""
+        return [word] if _is_flaggable(word) else []
 
     col = list(model.classes_).index(label)
     flags: list[str] = []
     for word, weight in explain(message, label).as_list(label=col):
         word = word.strip(_TRIM)
-        if weight > 0.01 and word and word not in flags:
+        if weight > 0.01 and _is_flaggable(word) and word not in flags:
             flags.append(word)
     return flags[:top]
+
+
+def _is_flaggable(word: str) -> bool:
+    """A token worth showing a user: not empty, not a function word, and not
+    a bare number unless it carries a currency sign."""
+    if not word or word.lower() in _NOT_A_FLAG:
+        return False
+    return any(c.isalpha() for c in word) or any(c in "£$€" for c in word)
 
 
 def main(argv: list[str]) -> int:
@@ -182,7 +224,11 @@ def main(argv: list[str]) -> int:
     if len(argv) < 2:
         print(__doc__)
         return 1
-    result = predict(" ".join(argv[1:]))
+    try:
+        result = predict(" ".join(argv[1:]))
+    except ValueError as exc:
+        print(exc)
+        return 1
     print(result.describe())
     print(f"\nscores: { {k: round(v, 3) for k, v in result.scores.items()} }")
     return 0
