@@ -12,9 +12,11 @@ Training a scam-type classifier would mean inventing the labels, which would
 undermine the trained classifier's evaluation. So the measurable
 model gates an unmeasured one, and the boundary is stated rather than blurred.
 
-The enrichment is explicitly **unevaluated**. No metric in this project
-depends on it, and ``enrich`` refuses to run on anything the trained model did
-not flag.
+The enrichment is **advisory: spot-checked, not part of the evaluation**. No
+metric in this project depends on it, and ``enrich`` refuses to run on
+anything the trained model did not flag. ``evaluate()``
+(``python -m src.scam_type --evaluate``) compares its label with the hand
+labels on the Singapore scams the model caught, as a sanity check only.
 
 Runs on the Gemini API through Google AI Studio, which has a permanent free
 tier — the project needs a few dozen calls, far below the daily quota. Set

@@ -7,8 +7,10 @@ and the committed .ipynb stays reviewable.
     python build_notebook.py               write the cells, then run them all
     python build_notebook.py --no-execute  write the cells only
 
-Running it retrains the model from data/raw/ (a few minutes), exactly as
-``python main.py --skip-download`` does.
+Running it retrains the model from data/raw/ (a few minutes), with the same
+stages as ``python main.py --skip-download`` apart from the demo. It also
+writes reports/lime_example.png and reports/mock_screenshot.png, which
+main.py does not.
 """
 
 from __future__ import annotations
@@ -43,6 +45,12 @@ costs them thousands of dollars. Separating them is the point of this project.
 This notebook calls the modules in `src/` in the order the pipeline runs. It
 contains no logic of its own — open the module named in each section to see how
 a step works. `main.py` runs the same sequence headless.
+
+> **Running this notebook rebuilds everything.** It re-splits the data and
+> retrains the model, overwriting `data/processed/`, `artifacts/model.joblib`
+> and `reports/`. The pipeline is seeded, so a re-run reproduces the shipped
+> results, but to *read* the results without re-running, use the outputs
+> already saved below or the files in `reports/`.
 """)
 
 code("""
@@ -68,7 +76,8 @@ Four corpora, four different formats, one schema. Each loader emits
 `text` / `label` / `source`, so nothing downstream needs to know where a
 message came from — except where that is used deliberately.
 
-Only the Mendeley smishing set distinguishes commercial spam from smishing.
+Only the two Mendeley sets distinguish commercial spam from smishing, and only
+the smaller one is real messages (the larger is published as LLM-generated).
 UCI has a single `spam` class that conflates the two, and the NUS corpus is
 ham-only because it was collected from volunteers rather than a spam trap.
 """)
@@ -104,15 +113,18 @@ Some messages carry *different labels in different corpora*. Almost all of them
 are `uci=spam` versus `mendeley=smishing` on identical text — UCI calls a
 credential-harvesting message "spam", Mendeley calls it "smishing".
 
-`SOURCE_PRIORITY` in `preprocess.py` resolves them to the finer label. Had UCI
-been ranked first, several hundred scams would have trained as marketing.
+`SOURCE_PRIORITY` in `preprocess.py` resolves them by source, and Mendeley
+ranks above UCI, so the finer label wins. Had UCI been ranked first, several
+hundred scams would have trained as marketing. 52 of the 303 conflicts sit
+inside a single corpus; there the row that sorts first is kept, which leaves 16
+messages that one source called smishing labelled spam.
 """)
 
 code("""
 from src.preprocess import dedup_key
 
 conflicts = conflicts.assign(_k=conflicts["text"].map(dedup_key))
-print(f"{conflicts['_k'].nunique()} messages labelled inconsistently across corpora\\n")
+print(f"{conflicts['_k'].nunique()} messages with conflicting labels\\n")
 
 for key, group in list(conflicts.groupby("_k"))[:3]:
     print(" | ".join(f"{r.source}={r.label}" for r in group.itertuples()))
@@ -123,7 +135,7 @@ for key, group in list(conflicts.groupby("_k"))[:3]:
 md("""
 ## 2. Preprocessing — `src/preprocess.py`
 
-Normalise, deduplicate, split. Five decisions worth noticing:
+Deduplicate, normalise, split. Four decisions worth noticing:
 
 **Placeholders, not deletion.** URLs, phone numbers and amounts become marker
 tokens. Their *presence* is predictive even when the value is not.
@@ -132,16 +144,16 @@ tokens. Their *presence* is predictive even when the value is not.
 character features, because digits, case and punctuation are exactly what
 obfuscated smishing abuses.
 
-**The split is made over templates, not rows.** Scam campaigns reuse one
-template with a different phone number or prize amount each time; exact
-deduplication keeps every variant. Splitting by row put 27% of test smishing
-beside a sibling in training. Grouping by normalised text keeps each template
-on one side.
-
-**Near-copies are removed too.** Templates miss reworded variants ("it has
-been resent" → "it ingest been resent") and the same campaign with a different
-number. Any training row with character n-gram cosine ≥ 0.7 to a validation or
-test message, on the raw or the number-blanked text, is dropped.
+**The split is made over near-copy clusters, not rows.** Scam campaigns reuse
+one template with a different phone number or prize amount each time, or
+reword a phrase ("it has been resent" → "it ingest been resent"); exact
+deduplication keeps every variant. In an earlier version of the pipeline,
+splitting by row put 27% of test smishing beside a sibling in training.
+Messages that share a template, or whose character n-gram cosine is ≥ 0.7 on
+the raw or the number-blanked text, are linked into clusters, and whole
+clusters are assigned at random to train, validation or test. It is still a
+random split; the unit shuffled is the campaign, not the message. Nothing real
+is deleted, and validation and test are kept apart from each other too.
 
 **Synthetic rows are barred from evaluation**, structurally — the LLM-generated
 corpus is forced into the training split and cannot reach validation or test.
@@ -179,7 +191,7 @@ spent once, at the end, by the selected model only.
 
 Selection is on macro F1 with smishing recall as the tiebreak, among the rungs
 that flag at most 1% of real Singaporean messages, applied mechanically rather
-than by eye. Rungs within noise of each other on macro F1 differ tenfold on
+than by eye. Rungs within noise of each other on macro F1 differ over tenfold on
 false alarms, which macro F1 cannot see; the cap was set with the validation
 results in view. The ladder is the deliverable as much as the
 final model is: one model with a good number says nothing about whether a
@@ -228,8 +240,8 @@ missed scam costs 20 and a false scam alarm costs 2 — so it flags a message
 as smishing even at modest probability.
 
 Both are scored on validation and the Singapore shift set before the test set
-is touched. The matrix prefers min-cost, but it buys a few extra scams with a
-large rise in false alarms on real local messages — a cost the matrix leaves
+is touched. The matrix prefers min-cost, which catches 18 more of the 63 validation scams,
+but triples false alarms on real local messages — a cost the matrix leaves
 out. `config.yaml` therefore serves argmax.
 """)
 
@@ -244,7 +256,8 @@ The NUS shift set only measures false alarms. To measure *misses* on local
 scams, a small evaluation-only set of scam texts sent to people in Singapore
 was collected from SPF advisories, Mothership and archived ScamAlert stories,
 one source URL per message (51 of the 60 scams transcribed from screenshots
-with AI assistance). It never touches training or selection.
+with AI assistance). It never trains or tunes the model; it is one yardstick
+in the split study (section 4a).
 """)
 
 code("""
@@ -264,14 +277,16 @@ md("""
 ## 4. Does the LLM-generated corpus help? — `src/ablation.py`
 
 The corpus is mostly reworded copies of the other corpora. On the single
-validation split it appears to help, but over six repeated template splits of
-the non-test data it makes no reliable difference (recall +0.02 on average,
-macro F1 unchanged), so the served model trains on real data only
-(`train.use_synthetic: false`). The repeated splits also show how much one
-split can mislead: real-only recall ranges from 0.54 to 0.91 across them.
+validation split it appears to help (+9.5 points of smishing recall), but over
+six repeated cluster splits of the non-test data it does not: recall −1.7
+points on average, better in only 1 of 6, macro F1 slightly lower. So the
+served model trains on real data only (`train.use_synthetic: false`). The
+repeated splits also show how much one split can mislead: real-only recall
+ranges from 0.75 to 0.90 across them, and the single validation split (0.62)
+falls below that range.
 
-The comparison runs on **validation and the Singapore shift set only** — both
-real messages. Spending the test set to choose an augmentation setting would be
+The comparison runs on **validation, repeated re-splits of the non-test data
+and the Singapore shift set** — never the test set. Spending the test set to choose an augmentation setting would be
 exactly the leak the evaluation design exists to prevent.
 """)
 
@@ -280,6 +295,30 @@ from src.ablation import repeated, run as ablation_run
 
 ablation = ablation_run()
 repeats = repeated()
+""")
+
+# ---------------------------------------------------------------- split study
+md("""
+## 4a. Does the way the data is split matter? — `src/split_study.py`
+
+Wouldn't a plain random split be better, since the model would see every
+pattern? The same real messages are split three ways and the same model is
+trained on each, for three seeds:
+
+* **random**: each message on its own, the textbook split;
+* **delete**: by template, then training rows that nearly copy a held-out
+  message are deleted (this project's previous method);
+* **cluster**: whole near-copy clusters at random (the method used).
+
+"Twin" means a test scam with a near-copy in training. The real Singapore
+scams never enter any training set, so they are the common yardstick for how
+good each trained model really is.
+""")
+
+code("""
+from src.split_study import run as split_study_run
+
+study = split_study_run()
 """)
 
 # ---------------------------------------------------------------- robustness
@@ -310,6 +349,30 @@ code("""
 top = pd.read_csv(CFG.reports_dir / "top_features.csv")
 for cls, group in top.groupby("class"):
     print(f"{cls:9}", "  ".join(repr(f) for f in group["feature"].head(8)))
+""")
+
+# ---------------------------------------------------------------- review
+md("""
+## 4c. Human in the loop — `src/review.py`
+
+When should a person check a message instead of the bot answering alone? Not
+below a flat confidence such as 60%: the errors are not equally expensive. The
+rule is a cost-sensitive form of Chow's reject option, using the project's
+cost matrix. A message goes to
+review when the **expected cost of the bot's verdict** exceeds the cost of a
+review (`review.cost` in `config.yaml`, 0.5 = 1/40 of a missed scam).
+
+A "legitimate" verdict with a 3% chance of being a scam costs 20 × 0.03 = 0.6
+in expectation and goes to a person; a 55/45 split between legitimate and
+marketing spam costs at most 0.45 and does not. Every review cost in
+`review.grid` is reported on every set, so the choice can be seen against its
+neighbours.
+""")
+
+code("""
+from src.review import run as review_run
+
+review = review_run()
 """)
 
 # ---------------------------------------------------------------- serving
@@ -404,7 +467,10 @@ model already flagged as smishing**. The gate lives inside `enrich()`, not in
 the caller, so the second stage cannot accidentally run on everything — which
 also keeps legitimate messages off the network.
 
-It is explicitly unevaluated. No metric in this project depends on it.
+It is advisory: spot-checked, not part of the evaluation. No metric in this
+project depends on it; `python -m src.scam_type --evaluate` compares its label
+with the hand labels on the Singapore scams the model caught (needs
+`GEMINI_API_KEY`).
 """)
 
 code("""

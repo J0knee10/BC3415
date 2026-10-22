@@ -12,8 +12,8 @@ API, so a bot there would need a Meta Business account and still only see
 messages forwarded to it. The interaction is identical either way: the user
 forwards a suspicious message, the bot answers.
 
-Privacy: message bodies are never written to a log. Only the verdict label and
-a length are recorded, which is enough to debug and to chart usage without
+Privacy: message bodies are never written to a log. Only the verdict label, its
+confidence, the message length and whether enrichment ran are recorded, which is enough to debug and to chart usage without
 retaining anyone's personal messages.
 """
 

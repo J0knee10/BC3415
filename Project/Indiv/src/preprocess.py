@@ -1,11 +1,11 @@
-"""Preprocessing: normalise, deduplicate, split.
+"""Preprocessing: deduplicate, normalise, split.
 
 Run with::
 
     python -m src.preprocess
 
-Writes ``train.csv``, ``val.csv``, ``test.csv`` and ``shift_sg.csv`` into
-``data/processed``.
+Writes ``train.csv``, ``val.csv``, ``test.csv``, ``shift_sg.csv``,
+``sg_scams.csv`` and ``label_conflicts.csv`` into ``data/processed``.
 
 Three decisions in here matter more than the code:
 
@@ -15,15 +15,16 @@ Three decisions in here matter more than the code:
 2. **Two text columns.** ``text_clean`` feeds word features; the original
    ``text`` feeds character features, because digits and punctuation are
    exactly what obfuscated smishing abuses.
-3. **Deduplication before splitting, and template-aware splitting.** The
+3. **Deduplication before splitting, and a split by near-copy cluster.** The
    corpora overlap — UCI absorbed part of the NUS corpus, so identical
    messages appear in both. Splitting first would put the same message in
    train and test and inflate every metric. Exact deduplication is not enough
    on its own: scam campaigns send one template with a different phone number
-   or prize amount each time, and those variants survive it. The split is
-   therefore made over *templates* (the normalised text), so every variant of
-   a template lands on the same side, and then any training row that is a
-   near-copy of a held-out message (a paraphrase, a changed word) is dropped.
+   or prize amount each time, or reword a phrase, and those variants survive
+   it. So messages that share a template or nearly copy each other are linked
+   into *clusters*, and the split randomly assigns whole clusters to train,
+   validation or test. No copy of a campaign can sit on both sides, and no
+   real message has to be thrown away to guarantee it.
 """
 
 from __future__ import annotations
@@ -33,8 +34,10 @@ import sys
 
 import numpy as np
 import pandas as pd
+from scipy.sparse import csr_matrix
+from scipy.sparse.csgraph import connected_components
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GroupShuffleSplit, StratifiedGroupKFold
 
 from .config import CFG
 from .datasets import SYNTHETIC_SOURCES, load_all, load_sg_scams
@@ -111,27 +114,29 @@ def deduplicate(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     return df.drop(columns=["_key", "_rank"]).reset_index(drop=True), conflicts
 
 
-GROUP = "text_clean"  # the template a message belongs to; see split()
+GROUP = "text_clean"  # the template a message belongs to (normalised text)
+CLUSTER = "cluster"  # the near-copy cluster a message belongs to; see split()
 
 
-def _group_split(
-    df: pd.DataFrame, test_size: float, stratify: bool
+def cluster_split(
+    df: pd.DataFrame, test_size: float, stratify: bool, seed: int | None = None
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Split by template rather than by row, stratified on label.
+    """Randomly assign whole near-copy clusters to one side or the other.
 
-    Each template is one unit, labelled by its first row, so the variants of a
-    scam campaign cannot straddle the boundary. ``test_size`` is therefore a
-    fraction of templates, which on this data is within a few rows of the same
-    fraction of messages.
+    Still a random split, but the unit being shuffled is the cluster, not the
+    message: the scikit-learn practice for groups of dependent samples, such as
+    several X-rays from one patient. Stratified on label, so each side keeps
+    the class balance. ``test_size`` is realised as one fold of
+    ``round(1 / test_size)`` (0.20 is 1 in 5; 0.15 is 1 in 7, about 14%).
     """
-    templates = df.groupby(GROUP)["label"].first()
-    keep, hold = train_test_split(
-        templates.index.to_numpy(),
-        test_size=test_size,
-        random_state=CFG.split["random_state"],
-        stratify=templates.to_numpy() if stratify else None,
-    )
-    return df[df[GROUP].isin(set(keep))], df[df[GROUP].isin(set(hold))]
+    seed = CFG.split["random_state"] if seed is None else seed
+    if stratify:
+        folds = StratifiedGroupKFold(n_splits=round(1 / test_size), shuffle=True, random_state=seed)
+        keep, hold = next(folds.split(df, df["label"], df[CLUSTER]))
+    else:
+        folds = GroupShuffleSplit(n_splits=1, test_size=test_size, random_state=seed)
+        keep, hold = next(folds.split(df, groups=df[CLUSTER]))
+    return df.iloc[keep], df.iloc[hold]
 
 
 def near_duplicates(
@@ -190,8 +195,35 @@ def near_copies(
     return raw | clean
 
 
+def near_copy_clusters(df: pd.DataFrame, corpus: pd.DataFrame | None = None) -> np.ndarray:
+    """Cluster id per message: messages linked by near-copies, transitively.
+
+    Two messages are linked when their similarity reaches the near-copy
+    threshold on the raw text or on the normalised text (the same test as
+    ``near_copies``; a shared template scores 1.0 on the normalised text, so
+    templates are linked too). Clusters are the connected components, so if A
+    nearly copies B and B nearly copies C, all three share a cluster.
+    """
+    threshold = CFG.split["near_dup_threshold"]
+    n = len(df)
+    rows, cols = [], []
+    for column in ["text", GROUP]:
+        vec = TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5), sublinear_tf=True)
+        vec.fit((df if corpus is None else corpus)[column].astype(str))
+        X = vec.transform(df[column].astype(str))
+        XT = X.T.tocsc()
+        for start in range(0, n, 2000):  # chunked to bound memory
+            block = (X[start : start + 2000] @ XT).tocoo()
+            hit = block.data >= threshold
+            rows.append(block.row[hit] + start)
+            cols.append(block.col[hit])
+    r, c = np.concatenate(rows), np.concatenate(cols)
+    graph = csr_matrix((np.ones(len(r), dtype=np.int8), (r, c)), shape=(n, n))
+    return connected_components(graph, directed=False)[1]
+
+
 def split(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
-    """Stratified, template-aware train/val/test split.
+    """Stratified train/val/test split by near-copy cluster.
 
     Two kinds of rows are held out of the evaluation splits by construction:
 
@@ -201,33 +233,41 @@ def split(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
       in, so the local-shift result is a clean comparison and not an average.
 
     No message is allowed on both sides of a boundary, by template or by near
-    copy: training rows (real or synthetic) that nearly duplicate a validation
-    or test message are dropped, and so are shift rows that nearly duplicate a
-    training message.
+    copy. Real messages are clustered first (``near_copy_clusters``) and whole
+    clusters are split, so validation and test are also kept apart from each
+    other, and no real message is dropped. Generated rows, which only ever join
+    training, are dropped if they nearly copy a validation or test message;
+    so are shift rows that nearly copy a training message.
     """
     cfg = CFG.split
 
     is_nus = df["source"] == "nus"
     is_synthetic = df["source"].isin(SYNTHETIC_SOURCES)
-    pool = df[~is_nus & ~is_synthetic]
+    pool = df[~is_nus & ~is_synthetic].copy()
+    pool[CLUSTER] = near_copy_clusters(pool, corpus=df)
+    sizes = pool[CLUSTER].value_counts()
+    print(
+        f"  real messages: {len(pool):,} in {len(sizes):,} near-copy clusters "
+        f"(largest {sizes.iloc[0]}, single messages {int((sizes == 1).sum()):,})"
+    )
 
-    train, test = _group_split(pool, cfg["test_size"], cfg["stratify"])
-    train, val = _group_split(train, cfg["val_size"], cfg["stratify"])
+    train, test = cluster_split(pool, cfg["test_size"], cfg["stratify"])
+    train, val = cluster_split(train, cfg["val_size"], cfg["stratify"])
 
     # Generated rows can only join the training split (src.ablation measures
     # them; train.use_synthetic decides whether the served model uses them).
-    train = pd.concat([train, df[is_synthetic]], ignore_index=True)
-
+    # They are not clustered with the real messages, so any that nearly copy
+    # a held-out message are dropped instead.
     held_out = pd.concat([val, test])
-    same_template = train[GROUP].isin(set(held_out[GROUP])).to_numpy()
-    leak = same_template | near_copies(train, held_out, corpus=df)
-    dropped = train[leak]
-    print(
-        f"  train rows dropped (near-copy of val/test):     {len(dropped):,}  "
-        f"(synthetic {dropped['source'].isin(SYNTHETIC_SOURCES).sum():,}, "
-        f"real {(~dropped['source'].isin(SYNTHETIC_SOURCES)).sum():,})"
+    generated = df[is_synthetic]
+    leak = generated[GROUP].isin(set(held_out[GROUP])).to_numpy() | near_copies(
+        generated, held_out, corpus=df
     )
-    train = train[~leak]
+    print(
+        f"  generated rows dropped (near-copy of val/test): {int(leak.sum()):,} "
+        f"of {len(generated):,}"
+    )
+    train = pd.concat([train, generated[~leak]], ignore_index=True)
 
     shift_sg = df[is_nus]
     shift_ok = shift_sg[~near_copies(shift_sg, train, corpus=df)]
@@ -279,7 +319,7 @@ def build(allow_missing_target: bool = False) -> dict[str, pd.DataFrame]:
     splits = split(df)
 
     # The Singapore scam set is evaluation-only: normalised like everything
-    # else, kept clear of any template the model trains on, never split.
+    # else, kept clear of any near-copy of a training message, never split.
     try:
         sg = load_sg_scams()
     except FileNotFoundError as exc:

@@ -1,0 +1,33 @@
+# Core: data, preprocessing, the classical model ladder.
+pandas>=2.0
+numpy>=1.26
+scikit-learn>=1.4
+PyYAML>=6.0
+requests>=2.31
+joblib>=1.3
+# Loads credentials from the gitignored .env (see .env.example).
+python-dotenv>=1.0
+matplotlib>=3.8
+
+# Red flags: LIME token attributions behind predict()'s explanations.
+lime>=0.2
+
+# LLM second stage (scam-type enrichment). Needs GEMINI_API_KEY.
+google-genai>=2.28
+pydantic>=2.0
+
+# Screenshot OCR path. Also needs the Tesseract binary on the system;
+# `python -m src.download` fetches the English language data into tessdata/.
+pytesseract>=0.3
+Pillow>=10.0
+
+# Telegram bot front end. Needs TELEGRAM_BOT_TOKEN.
+python-telegram-bot>=21
+
+# Generates and executes notebooks/walkthrough.ipynb (build_notebook.py).
+nbformat>=5.9
+nbconvert>=7.0
+ipykernel>=6.0
+
+# Tests: `python -m pytest tests`.
+pytest>=8.0

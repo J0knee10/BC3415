@@ -35,7 +35,7 @@ class Config:
     # --- labels ---------------------------------------------------------
     @property
     def labels(self) -> list[str]:
-        """Class names in a fixed order; this order sets the integer encoding."""
+        """Class names in a fixed order; it sets the confusion- and cost-matrix axes."""
         return list(self.raw["labels"]["names"])
 
     @property

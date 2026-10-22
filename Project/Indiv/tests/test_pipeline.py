@@ -43,7 +43,7 @@ def test_dedup_key_ignores_cosmetic_differences():
     assert dedup_key("Hello, World!") == dedup_key("hello world")
 
 
-def test_deduplicate_keeps_finer_label():
+def test_deduplicate_prefers_mendeley_label():
     df = pd.DataFrame(
         {
             "text": ["Claim your prize now", "claim your prize now!"],
@@ -59,12 +59,25 @@ def test_deduplicate_keeps_finer_label():
 
 # --- splitting ----------------------------------------------------------
 def _toy_corpus() -> pd.DataFrame:
-    """Templates with several variants each, plus synthetic and NUS rows."""
+    """Templates with several variants each, plus synthetic and NUS rows.
+
+    Each template's wording is random letters, so different templates are not
+    near-copies of each other; the variants of one template differ only in a
+    number, so they are.
+    """
+    import random
+
+    rng = random.Random(0)
+
+    def words() -> str:
+        return " ".join("".join(rng.choice("abcdefghijklmnopqrstuvwxyz") for _ in range(7)) for _ in range(4))
+
     rows = []
     for label in ["ham", "spam", "smishing"]:
-        for t in range(20):
+        for _ in range(20):
+            body = words()
             for v in range(3):  # three variants of one template
-                rows.append((f"{label} template {chr(97 + t)} call {9000 + v}", label, "mendeley_smishing"))
+                rows.append((f"{body} call {9000 + v}", label, "mendeley_smishing"))
     rows += [(f"generated scam {chr(97 + i)}", "smishing", "mendeley_balanced") for i in range(10)]
     rows += [(f"lunch at {chr(97 + i)} later", "ham", "nus") for i in range(10)]
     df = pd.DataFrame(rows, columns=["text", "label", "source"])
@@ -108,7 +121,7 @@ def test_real_splits_have_no_near_copy_across_the_boundary():
     """The guarantee on the actual data, not just the toy corpus.
 
     Uses its own TF-IDF weights rather than the pipeline's, so it is an
-    independent check of what preprocess.split() removed. Different weights
+    independent check of what preprocess.split() keeps apart. Different weights
     move a borderline pair by a few hundredths, so the check allows a 0.05
     margin above the pipeline's 0.7 threshold.
     """
@@ -116,10 +129,44 @@ def test_real_splits_have_no_near_copy_across_the_boundary():
     if not all(p.exists() for p in paths.values()):
         pytest.skip("no processed splits; run `python -m src.preprocess`")
     frames = {n: pd.read_csv(p).fillna("") for n, p in paths.items()}
+    # Messages of a word or two ("okie great" against "okie") have so few
+    # character n-grams that their similarity swings with the weights; they
+    # carry no campaign to leak, so the independent check skips them.
+    frames = {n: f[f["text"].str.len() >= 20] for n, f in frames.items()}
     held = pd.concat([frames["val"], frames["test"]])
+    margin = CFG.split["near_dup_threshold"] + 0.05
     for column in ["text", GROUP]:
-        margin = CFG.split["near_dup_threshold"] + 0.05
         assert not near_duplicates(held[column], frames["train"][column], margin).any()
+        # Splitting whole clusters also keeps validation and test apart.
+        assert not near_duplicates(frames["test"][column], frames["val"][column], margin).any()
+
+
+# --- evaluation ---------------------------------------------------------
+def test_bootstrap_by_cluster_widens_the_interval():
+    """Twenty copies of one missed campaign are one piece of evidence, not twenty."""
+    from src.evaluate import bootstrap_ci
+
+    y_true = ["smishing"] * 40
+    y_pred = ["spam"] * 20 + ["smishing"] * 20
+    groups = ["campaign"] * 20 + [f"t{i}" for i in range(20)]
+
+    lo_msg, hi_msg = bootstrap_ci(y_true, y_pred, "smishing")
+    lo_grp, hi_grp = bootstrap_ci(y_true, y_pred, "smishing", groups=groups)
+    assert hi_grp - lo_grp > hi_msg - lo_msg
+
+
+def test_review_depends_on_which_mistake_is_at_stake():
+    """A 3% chance of a missed scam needs a human; a 45% ham/spam split does not."""
+    from src.review import needs_review
+
+    classes = ["ham", "smishing", "spam"]
+    proba = [
+        [0.97, 0.03, 0.00],  # "legitimate", small chance it is a scam: 20 x 0.03 = 0.6
+        [0.55, 0.00, 0.45],  # "legitimate", torn with marketing spam: 0 (spam as ham is free)
+        [0.45, 0.00, 0.55],  # "spam", torn with legitimate: 1 x 0.45 = 0.45
+    ]
+    labels = ["ham", "ham", "spam"]
+    assert needs_review(proba, classes, labels, cost=0.5).tolist() == [True, False, False]
 
 
 # --- serving ------------------------------------------------------------

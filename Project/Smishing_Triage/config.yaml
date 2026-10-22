@@ -1,0 +1,102 @@
+# Smishing Triage — central configuration.
+# Every path, label and split parameter lives here so that nothing is hardcoded
+# in the modules. Change a value here and the whole pipeline follows.
+
+# --- Labels -------------------------------------------------------------
+# Order matters: it fixes the axis order of every confusion matrix and of the
+# cost matrix below. (The model keeps string labels.)
+labels:
+  names: [ham, spam, smishing]
+  # The class the project is actually about. Recall on this class is the
+  # headline metric, not overall accuracy.
+  target: smishing
+
+# --- Paths --------------------------------------------------------------
+# All paths are relative to the project root (the directory holding this file).
+paths:
+  raw: data/raw
+  processed: data/processed
+  artifacts: artifacts
+  reports: reports
+  tessdata: tessdata     # Tesseract language data for the OCR path
+
+# --- Data splitting -----------------------------------------------------
+split:
+  test_size: 0.20
+  val_size: 0.15        # of the remaining pool; the cluster split realises it as 1 in 7
+  random_state: 42
+  stratify: true
+  # Two messages whose character n-gram cosine similarity reaches this (on the
+  # raw or the number-blanked text) are near-copies: they join one cluster,
+  # and whole clusters are split (see preprocess.near_copy_clusters). Template
+  # matching alone missed paraphrased variants of the same campaign.
+  near_dup_threshold: 0.7
+
+# --- Training and selection ---------------------------------------------
+train:
+  # The LLM-"generated" Mendeley rows are mostly reworded copies of the other
+  # corpora. They stay in train.csv so src.ablation can measure them; across
+  # repeated cluster splits (reports/ablation_repeated.csv) they make smishing
+  # recall slightly worse, so the served model trains on real messages only.
+  use_synthetic: false
+
+selection:
+  # Highest validation macro F1, with smishing recall as the tiebreak, among
+  # rungs that flag at most this share of the Singapore shift set (real local
+  # ham). Rungs within noise of each other on macro F1 differ more than
+  # tenfold on false alarms, which macro F1 cannot see. Set under an earlier
+  # split with that split's validation results in view; the test set was not
+  # used.
+  max_sg_false_alarm: 0.01
+
+# --- Text normalisation -------------------------------------------------
+# Placeholder tokens replace URLs, phone numbers and money amounts. Their
+# presence is predictive even when the specific value is not, so they are
+# substituted rather than deleted.
+normalise:
+  url_token: " URLTOKEN "
+  email_token: " EMAILTOKEN "
+  phone_token: " PHONETOKEN "
+  money_token: " MONEYTOKEN "
+  number_token: " NUMTOKEN "
+
+# --- Evaluation ---------------------------------------------------------
+# Cost matrix for choosing an operating point. Rows are the true class,
+# columns the predicted class, in the order given by labels.names.
+# A missed smishing message is the expensive error; a marketing text flagged
+# as smishing is a minor annoyance; spam left in the inbox costs nothing.
+cost_matrix:
+  ham:      {ham: 0, spam: 1,  smishing: 2}
+  spam:     {ham: 0, spam: 0,  smishing: 1}
+  smishing: {ham: 20, spam: 10, smishing: 0}
+
+# How calibrated probabilities become a verdict.
+#   argmax    the most probable class
+#   min_cost  the class with the lowest expected cost under cost_matrix
+# src.train scores both on validation and on the Singapore shift set and
+# writes reports/operating_point_val.csv, so the choice is made with the
+# evidence in view. The matrix alone prefers min_cost, but it prices a false
+# scam alarm on a real message at only 2, and min_cost raises false alarms on
+# Singaporean ham threefold. For a checker people must trust, argmax.
+operating_point: argmax
+
+# --- Human review -------------------------------------------------------
+# A message goes to a person when the expected cost of the bot answering on
+# its own (the cost matrix above, applied to the served verdict) exceeds the
+# cost of a review, in the same units. See src/review.py.
+#   0.5 = 1/40 of a missed scam (20). In money: a 2-minute analyst review at
+#   S$50/hour (S$1.67) is 1/40 of a missed scam if about 0.27% of missed
+#   scams end in an average S$24,500 loss.
+review:
+  cost: 0.5
+  # Every value here is reported side by side in reports/human_review.csv,
+  # so the choice can be seen against its neighbours. 0.14 is what the
+  # writeup's 1% loss assumption implies.
+  grid: [0.14, 0.5, 1.0, 2.0]
+
+evaluate:
+  # Bootstrap resamples used for confidence intervals on the smishing metrics.
+  # The smishing test set is small (~100 messages), so a point estimate alone
+  # would overstate precision.
+  bootstrap_n: 2000
+  bootstrap_alpha: 0.05

@@ -34,6 +34,7 @@ from . import evaluate as ev
 from . import features as ft
 from .config import CFG, ROOT
 from .datasets import SYNTHETIC_SOURCES
+from .preprocess import CLUSTER
 
 FEATURE_COLUMNS = [ft.TEXT_RAW, ft.TEXT_CLEAN]
 
@@ -255,7 +256,7 @@ def run() -> pd.DataFrame:
         fitted[name] = model
 
         y_pred, proba = _predict(model, val)
-        row = ev.report(val["label"], y_pred, name=f"{name} [val]")
+        row = ev.report(val["label"], y_pred, name=f"{name} [val]", groups=val[CLUSTER])
         row["model"] = name  # the leaderboard keys on the bare name
         if len(shift):
             y_shift, _ = _predict(model, shift)
@@ -315,7 +316,11 @@ def run() -> pd.DataFrame:
     # --- the one test evaluation ----------------------------------------
     print(f"\n{'=' * 60}\nTEST — evaluated once, by the selected model only")
     y_pred, proba = _predict(champion, test, rule)
-    test_row = ev.report(test["label"], y_pred, name=f"{champion_name} [test]")
+    # The interval resamples near-copy clusters, not messages: copies of one
+    # campaign are one piece of evidence, not several.
+    test_row = ev.report(
+        test["label"], y_pred, name=f"{champion_name} [test]", groups=test[CLUSTER]
+    )
     test_row["operating_point"] = rule
 
     # Are the confidences the bot shows trustworthy?

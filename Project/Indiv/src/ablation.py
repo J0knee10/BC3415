@@ -12,9 +12,9 @@ It fits the champion pipeline with and without the generated rows and compares
 them twice:
 
 * on the validation split and the Singapore shift set (``run``), and
-* over repeated template splits of the non-test data (``repeated``), because
-  a single split of ~80 smishing messages swings recall by tens of points and
-  one split cannot tell a real effect from luck.
+* over repeated cluster splits of the non-test data (``repeated``), because
+  a single split of 60–90 smishing messages swings recall by over ten points
+  and one split cannot tell a real effect from luck.
 
 Both comparisons avoid the test split entirely. The test set is spent once, by
 ``src.train``, on the selected model; re-using it here to pick an augmentation
@@ -27,12 +27,11 @@ from __future__ import annotations
 import sys
 
 import pandas as pd
-from sklearn.model_selection import train_test_split
 
 from . import evaluate as ev
 from .config import CFG
 from .datasets import SYNTHETIC_SOURCES
-from .preprocess import GROUP, near_copies
+from .preprocess import CLUSTER, cluster_split, near_copies
 from .train import FEATURE_COLUMNS, build_ladder, load_splits
 
 
@@ -58,7 +57,9 @@ def run(model_name: str = "svm_char_tfidf") -> pd.DataFrame:
         model.fit(data[FEATURE_COLUMNS], data["label"])
 
         y_pred = model.predict(val[FEATURE_COLUMNS])
-        row = ev.report(val["label"], y_pred, name=f"{model_name} / {condition} [val]")
+        row = ev.report(
+            val["label"], y_pred, name=f"{model_name} / {condition} [val]", groups=val[CLUSTER]
+        )
         row["condition"] = condition
         row["train_rows"] = len(data)
 
@@ -103,12 +104,12 @@ def run(model_name: str = "svm_char_tfidf") -> pd.DataFrame:
 
 
 def repeated(model_name: str = "svm_char_tfidf", seeds: int = 6) -> pd.DataFrame:
-    """Real-only vs. with generated rows, over repeated template splits.
+    """Real-only vs. with generated rows, over repeated cluster splits.
 
     The real training and validation messages are pooled and re-split by
-    template (80/20) once per seed; the test split is never used. Generated
-    rows and training rows that nearly copy a fold's held-out messages are
-    removed, exactly as ``preprocess.split`` does.
+    near-copy cluster (80/20) once per seed; the test split is never used.
+    Generated rows that nearly copy a fold's held-out messages are removed,
+    exactly as ``preprocess.split`` does.
     """
     splits = load_splits()
     train, val, test = splits["train"], splits["val"], splits["test"]
@@ -120,14 +121,9 @@ def repeated(model_name: str = "svm_char_tfidf", seeds: int = 6) -> pd.DataFrame
 
     rows = []
     for seed in range(seeds):
-        templates = pool.groupby(GROUP)["label"].first()
-        keep, hold = train_test_split(
-            templates.index.to_numpy(), test_size=0.2, random_state=seed,
-            stratify=templates.to_numpy(),
-        )
-        fold_train = pool[pool[GROUP].isin(set(keep))]
-        fold_val = pool[pool[GROUP].isin(set(hold))]
-        fold_train = fold_train[~near_copies(fold_train, fold_val, corpus=corpus)]
+        # Whole near-copy clusters, as in preprocess.split: no real row needs
+        # dropping; generated rows that nearly copy the fold are dropped.
+        fold_train, fold_val = cluster_split(pool, 0.2, stratify=True, seed=seed)
         gen_ok = generated[~near_copies(generated, fold_val, corpus=corpus)]
 
         for condition, data in [("real_only", fold_train), ("with_generated", pd.concat([fold_train, gen_ok]))]:
@@ -139,7 +135,7 @@ def repeated(model_name: str = "svm_char_tfidf", seeds: int = 6) -> pd.DataFrame
 
     table = pd.DataFrame(rows)
     wide = table.pivot(index="seed", columns="condition", values=[target_recall, "macro_f1"])
-    print(f"\n{'=' * 60}\nREPEATED SPLITS — {model_name}, {seeds} template splits, test unused")
+    print(f"\n{'=' * 60}\nREPEATED SPLITS — {model_name}, {seeds} cluster splits, test unused")
     print(wide.to_string(float_format=lambda v: f"{v:.3f}"))
     gain = (wide[target_recall]["with_generated"] - wide[target_recall]["real_only"])
     f1_gain = (wide["macro_f1"]["with_generated"] - wide["macro_f1"]["real_only"])

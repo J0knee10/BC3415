@@ -136,9 +136,9 @@ def main(argv: list[str]) -> int:
     except (AttributeError, OSError):
         pass
 
-    if len(argv) < 2:
+    if len(argv) < 2 or argv[1] in {"-h", "--help"}:
         print("usage: python -m src.ocr <image path>")
-        return 1
+        return 0 if len(argv) >= 2 else 1
 
     try:
         text = image_to_text(argv[1])

@@ -6,7 +6,7 @@ or which rung of the ladder won.
 
     >>> from src.predict import predict
     >>> predict("Your DBS account is locked. Verify at http://bit.ly/x9")
-    Prediction(label='smishing', confidence=0.97, red_flags=[...])
+    Prediction(label='smishing', confidence=0.98, red_flags=[...])
 
 From the command line::
 
@@ -26,6 +26,7 @@ from . import evaluate as ev
 from . import features as ft
 from .config import CFG
 from .preprocess import normalise_text
+from .review import needs_review
 
 MODEL_PATH = CFG.artifacts_dir / "model.joblib"
 
@@ -38,6 +39,10 @@ class Prediction:
     confidence: float
     scores: dict[str, float] = field(default_factory=dict)
     red_flags: list[str] = field(default_factory=list)
+    # True when the expected cost of this verdict standing alone exceeds the
+    # cost of a human review (src/review.py). In a deployment the message
+    # would go to a fraud analyst; here the reply says so.
+    needs_review: bool = False
 
     @property
     def is_threat(self) -> bool:
@@ -47,6 +52,8 @@ class Prediction:
     def describe(self) -> str:
         """User-facing one-liner, as the bot would send it."""
         icon = {"ham": "✅", "spam": "📣", "smishing": "⚠️"}.get(self.label, "•")
+        if self.label == "ham" and self.needs_review:
+            icon = "❔"  # not a tick: a person should check it first
         headline = {
             "ham": "No scam signals found",
             "spam": "Marketing / spam",
@@ -55,9 +62,22 @@ class Prediction:
         line = f"{icon} {headline} ({self.confidence:.0%})"
         if self.red_flags:
             line += "\nFlagged on: " + ", ".join(f"'{w}'" for w in self.red_flags)
-        if self.label == "ham":
-            # Not an all-clear: about half of real local scams, mostly
-            # chat-style ones with no link, get this verdict (writeup §5).
+        if self.needs_review:
+            # A missed scam costs 20 times a false alarm, so even a small
+            # scam probability can make a human check worthwhile.
+            reason = (
+                "There is still enough chance this is a scam"
+                if self.label == "ham"
+                else "I'm not certain about this one"
+            )
+            line += (
+                f"\n🔎 {reason}, so a person should check it. Until then, treat "
+                "it as suspicious: don't click links, pay, or share codes."
+            )
+        elif self.label == "ham":
+            # Not an all-clear: about a third of real local scams (19 of 60),
+            # mostly chat-style ones with no link, get this verdict
+            # (writeup "The application" and "Limitations").
             line += (
                 "\nThis is not a guarantee. If it asks for money, a code or a "
                 "login, check with the sender on a number you already trust."
@@ -108,6 +128,8 @@ def predict_batch(messages: list[str], explain: bool = False) -> list[Prediction
     else:  # an uncalibrated estimator — fall back to a hard 1.0
         probs = [[1.0 if c == lab else 0.0 for c in classes] for lab in labels]
 
+    review = needs_review(probs, classes, labels)
+
     out = []
     for i, label in enumerate(labels):
         label = str(label)
@@ -120,6 +142,7 @@ def predict_batch(messages: list[str], explain: bool = False) -> list[Prediction
                 confidence=scores[label],
                 scores=scores,
                 red_flags=explain_tokens(messages[i], label) if flagged else [],
+                needs_review=bool(review[i]),
             )
         )
     return out
@@ -154,7 +177,7 @@ def explain(message: str, label: str, num_samples: int = 1000):
     LIME perturbs the message by deleting random subsets of words, scores
     every variant with the real model, and fits a small weighted linear model
     to those scores. Each word's weight is its estimated push towards
-    ``label``. Deleting *many* words at once is what lets it explain a 99%
+    ``label``. Deleting *many* words at once is what lets it explain a 95%
     confident prediction, where removing any single word moves nothing.
 
     The notebook uses this directly for figures; the bot goes through

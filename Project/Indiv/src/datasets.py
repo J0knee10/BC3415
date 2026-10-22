@@ -9,7 +9,7 @@ Each loader returns a DataFrame with the same three columns:
 Unifying the schema here means the rest of the pipeline never has to know
 which corpus a message came from, except where that is deliberately used
 (the NUS rows form the Singapore shift set, the LLM-generated rows are barred
-from the test split).
+from the validation and test splits).
 """
 
 from __future__ import annotations

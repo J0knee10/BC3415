@@ -31,7 +31,3 @@ ipykernel>=6.0
 
 # Tests: `python -m pytest tests`.
 pytest>=8.0
-
-# Not yet installed — the DistilBERT rung. ~2.5 GB download.
-# transformers>=4.40
-# torch>=2.2

@@ -1,7 +1,7 @@
 """Evaluation.
 
 The headline number for this project is **recall on the smishing class**, not
-accuracy. On a corpus that is ~83% ham, a model that predicts ham for
+accuracy. On a test set that is ~83% ham, a model that predicts ham for
 everything scores 83% accuracy and is worthless. Every function here is built
 around that.
 
@@ -110,16 +110,36 @@ def calibration_table(y_true, proba, classes: list[str], label: str | None = Non
     return pd.DataFrame(rows)
 
 
-def bootstrap_ci(y_true, y_pred, label: str, metric: str = "recall") -> tuple[float, float]:
+def bootstrap_ci(
+    y_true, y_pred, label: str, metric: str = "recall", groups=None
+) -> tuple[float, float]:
     """Percentile bootstrap interval for a per-class metric.
 
-    Resamples message indices with replacement. Reported alongside the point
-    estimate so the small smishing class is not quoted with false confidence.
+    Reported alongside the point estimate so the small smishing class is not
+    quoted with false confidence.
+
+    With ``groups`` (the near-copy cluster each message belongs to), whole
+    clusters are resampled rather than single messages. Copies of one scam campaign
+    are not independent evidence: a model that catches one copy catches them
+    all, so resampling messages would count one campaign several times and
+    make the interval too narrow.
     """
     y_true = np.asarray(y_true)
     y_pred = np.asarray(y_pred)
     n = len(y_true)
     rng = np.random.default_rng(CFG.split["random_state"])
+
+    if groups is not None:
+        codes = pd.factorize(np.asarray(groups))[0]
+        members = [np.flatnonzero(codes == g) for g in range(codes.max() + 1)]
+
+        def draw() -> np.ndarray:
+            picked = rng.integers(0, len(members), len(members))
+            return np.concatenate([members[g] for g in picked])
+    else:
+
+        def draw() -> np.ndarray:
+            return rng.integers(0, n, n)
 
     scorer = {
         "recall": metrics.recall_score,
@@ -129,7 +149,7 @@ def bootstrap_ci(y_true, y_pred, label: str, metric: str = "recall") -> tuple[fl
 
     draws = []
     for _ in range(CFG.evaluate["bootstrap_n"]):
-        idx = rng.integers(0, n, n)
+        idx = draw()
         draws.append(
             scorer(y_true[idx], y_pred[idx], labels=[label], average="macro", zero_division=0)
         )
@@ -165,8 +185,12 @@ def summarise(y_true, y_pred, name: str = "") -> dict:
     return row
 
 
-def report(y_true, y_pred, name: str = "", show_ci: bool = True) -> dict:
-    """Print a full evaluation and return the leaderboard row."""
+def report(y_true, y_pred, name: str = "", show_ci: bool = True, groups=None) -> dict:
+    """Print a full evaluation and return the leaderboard row.
+
+    ``groups`` makes the confidence interval resample near-copy clusters rather
+    than messages (see ``bootstrap_ci``).
+    """
     row = summarise(y_true, y_pred, name)
     target = CFG.target_label
 
@@ -178,9 +202,15 @@ def report(y_true, y_pred, name: str = "", show_ci: bool = True) -> dict:
     if f"{target}_recall" in row:
         line = f"{target} recall {row[f'{target}_recall']:.4f}"
         if show_ci:
-            lo, hi = bootstrap_ci(y_true, y_pred, target, "recall")
+            lo, hi = bootstrap_ci(y_true, y_pred, target, "recall", groups)
             line += f"   95% CI [{lo:.3f}, {hi:.3f}]"
             row[f"{target}_recall_ci"] = (lo, hi)
+            if groups is not None:
+                # The effective sample size: distinct clusters, not messages.
+                is_target = np.asarray(y_true) == target
+                n_clusters = int(pd.Series(np.asarray(groups)[is_target]).nunique())
+                line += f"  (resampled by cluster: {is_target.sum()} messages, {n_clusters} clusters)"
+                row[f"{target}_clusters"] = n_clusters
         print(line)
 
     print("\nconfusion matrix")

@@ -10,8 +10,8 @@ to see how that step works.
     python main.py --demo "message"     classify a single message
     python main.py --skip-download      reuse data already on disk
 
-Two pipelines live here. Stages 1-5 are the **training pipeline** and its
-checks: they run offline and end with a model file. Stage 6 is the **serving
+Two pipelines live here. Stages 1-7 are the **training pipeline** and its
+checks: they run offline and end with a model file. Stage 8 is the **serving
 path**: it loads
 that file and answers messages. The Telegram bot (``python -m app.bot``) is
 the serving path with a chat interface in front of it.
@@ -57,7 +57,7 @@ def stage_download() -> None:
 
 # --- Stage 2 ------------------------------------------------------------
 def stage_preprocess() -> None:
-    """Unify, normalise, deduplicate, split.
+    """Unify, deduplicate, normalise, split.
 
     The three decisions that matter are all here: deduplicate *before*
     splitting (the corpora overlap heavily), keep two text representations
@@ -104,6 +104,23 @@ def stage_ablation() -> None:
 
 
 # --- Stage 5 ------------------------------------------------------------
+def stage_splits() -> None:
+    """Does the way the data is split change what the test score means?
+
+    The same real messages split three ways (each message at random, by
+    template with near-copies deleted, by near-copy cluster), the champion
+    design trained on each, for three seeds. Evidence for the method in
+    ``preprocess.split``. It informed that choice of method; it does not
+    choose or tune the served model.
+    """
+    banner(5, "SPLIT STUDY", "random vs. delete vs. cluster splits")
+
+    from src.split_study import run
+
+    run()
+
+
+# --- Stage 6 ------------------------------------------------------------
 def stage_robustness() -> None:
     """Does the verdict survive the perturbations scammers actually use?
 
@@ -111,14 +128,29 @@ def stage_robustness() -> None:
     and without ``http://``, harmless links, chat-style scams. Reported as
     behaviour, not accuracy, in ``reports/robustness_probes.csv``.
     """
-    banner(5, "ROBUSTNESS", "obfuscation, link form, harmless links")
+    banner(6, "ROBUSTNESS", "obfuscation, link form, harmless links")
 
     from src.robustness import run
 
     run()
 
 
-# --- Stage 6 ------------------------------------------------------------
+# --- Stage 7 ------------------------------------------------------------
+def stage_review() -> None:
+    """When should a person look instead of the bot answering alone?
+
+    A message goes to human review when the expected cost of the bot's verdict
+    standing alone, under the cost matrix, exceeds the cost of a review.
+    Reported for several review costs in ``reports/human_review.csv``.
+    """
+    banner(7, "HUMAN REVIEW", "which verdicts a person should check")
+
+    from src.review import run
+
+    run()
+
+
+# --- Stage 8 ------------------------------------------------------------
 def stage_demo(message: str | None = None) -> None:
     """The serving path — what happens to one message at run time.
 
@@ -127,7 +159,7 @@ def stage_demo(message: str | None = None) -> None:
     ``scam_type.enrich()``, so it runs only on a smishing verdict and
     legitimate messages never leave the machine.
     """
-    banner(6, "SERVE", "predict() → verdict, confidence, red flags → optional enrichment")
+    banner(8, "SERVE", "predict() → verdict, confidence, red flags → optional enrichment")
 
     from src import scam_type
     from src.predict import predict
@@ -164,7 +196,9 @@ STAGES = {
     "preprocess": stage_preprocess,
     "train": stage_train,
     "ablation": stage_ablation,
+    "splits": stage_splits,
     "robustness": stage_robustness,
+    "review": stage_review,
     "demo": stage_demo,
 }
 
@@ -206,7 +240,9 @@ def main(argv: list[str]) -> int:
     stage_preprocess()
     stage_train()
     stage_ablation()
+    stage_splits()
     stage_robustness()
+    stage_review()
     stage_demo()
 
     print(f"\n{'=' * 72}\n  done — `python -m app.bot` to run the Telegram front end\n")
