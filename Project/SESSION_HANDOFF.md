@@ -120,3 +120,12 @@ The user questioned the split, so a split study was run (`src/split_study.py`, m
 - Gemini spot check: 30/36 (1 timeout).
 - The writeup was rewritten throughout; §6 now has a version 4 row plus "Testing the split itself" with references [6]–[9] (sklearn grouped CV, CheXNet, Saeb 2017, Allamanis 2019). 16 pages; 60 files in Smishing_Triage/.
 - Not done (optional): refit the shipped model on all data after evaluation (mentioned in §10 "Next version").
+
+## Session of 24 Oct (laptop): video script and README
+
+- Checked the brief: Option A deliverables are code, a model and a 3–5 min video. **No report is required**, so assume the marker may never read the PDF. The video has to carry the business case, the human-review threshold and the two-step rationale.
+- The professor's tips: say where the human is in the loop and how the threshold was set; explain why the design is two steps (ML classifier, then LLM) and what that saves; aim at a CFO and CTO together.
+- **Video script: `Project/VIDEO_SCRIPT.md`** (595 spoken words, about 4:30 with demo time). Graded by `bc3415-grader` as if the video follows it: **about 82% (A−)**, range 80–84. All of its script fixes are applied.
+- Measured on 24 Oct (not in reports/): a Gemini call is 123 in + 78 out tokens and takes 6–8 s; `predict()` with LIME takes 0.01–0.16 s. 8.8% of test messages reach the LLM (106/1,202). Sending all 50,000 checks a year would cost about US$12, gated about US$3, at US$0.30 / US$2.50 per million tokens (price not certain for the flash-lite alias).
+- README now has a "How it maps to the brief" paragraph, the review line for each verdict (no scam signals: 2.5%; spam: about 5%; likely scam: about 25% chance it's legitimate) and a "Why two steps" design decision. Copied to `Smishing_Triage/` and the hashes match `Indiv/` (60 files). No code or numbers changed, so the pipeline, notebook and PDF were not rerun.
+- **Remaining: record the video, add it to `Smishing_Triage/`, zip it.** Not committed to git.

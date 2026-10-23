@@ -12,6 +12,15 @@ costs them thousands of dollars. Separating them is what this project is for.
 For the problem framing, results and limitations, see the technical writeup,
 `Smishing_Triage_Writeup.pdf`. This file is the developer's guide.
 
+**How it maps to the brief.** The brief's retail case combines a text verdict,
+customer images and a joint flag. This project follows the same pattern for a
+bank. The trained text classifier gives the verdict, as review sentiment
+would. Screenshots are the image channel: OCR reads their text, and the same
+classifier judges it, because no public labelled set of scam screenshots
+exists to train an image classifier on. A second LLM stage then names the scam
+type, so a flagged message carries both a verdict and the kind of problem it
+looks like, as a flagged order would.
+
 ---
 
 ## Results
@@ -361,18 +370,54 @@ a review (`review.cost: 0.5` in `config.yaml`, 1/40 of a missed scam). Not a
 flat confidence cut-off, because the mistakes are not equally expensive: a
 "no scam signals" verdict with a 3% scam chance costs 20 × 0.03 = 0.6 and
 goes to a person, while a 55/45 legitimate-vs-spam split costs at most 0.45 and
-does not. On test it sends 10.0% of messages to review, including all 26
-missed scams. Every review cost in `review.grid` is reported on every set
+does not. In confidence terms, each verdict gets its own line from the same
+costs. A "no scam signals" verdict goes to a person above a 2.5% scam chance
+(20 × p > 0.5), and a "spam" verdict above about 5%. A "likely scam" verdict
+goes to a person when the chance it is a legitimate message passes about 25%. At S$50 an
+hour, a two-minute review costs about S$1.67, and 0.5 sets that at 1/40 of a
+missed scam. That is break-even if a missed scam's expected loss is about S$67,
+which is the least certain assumption. On test it sends 10.0% of messages to
+review, including all 26 missed scams. Every review cost in `review.grid` is reported on every set
 (`reports/human_review.csv`). The cost was fixed under the previous split with
 that split's validation and test figures both in view, and not revisited; the
 table shows how the figures move with the choice.
 
 **The LLM never makes the decision.** `scam_type.enrich()` gates on the trained
 model's verdict, so the enrichment runs only on messages already flagged as
-smishing — which also keeps legitimate messages off the network. No metric
-depends on the scam-type label; as a spot check, it matches the hand label on
-30 of the 36 Singapore scams the model caught, with one call timing out
-(`reports/scam_type_eval.csv`).
+smishing. No metric depends on the scam-type label; as a spot check, it matches
+the hand label on 30 of the 36 Singapore scams the model caught, with one call
+timing out (`reports/scam_type_eval.csv`).
+
+**Why two steps, classifier then LLM, and what the gate saves.** The figures
+below were measured on 24 October 2026. They come from one-off checks, not
+from the pipeline.
+
+- *Tokens, though they matter least.* One call is about 200 tokens (123 in, 78
+  out). On test, 8.8% of messages are called smishing (106 of 1,202). In the
+  writeup's pilot scenario (50,000 checks a year, 40% scams), about a quarter
+  are. At US$0.30 / US$2.50 per million tokens, the highest Flash-Lite list
+  price found, sending every check to the LLM would cost about US$12 a year,
+  and gating cuts that to about US$3. That is too small to justify the design
+  on its own.
+- *Latency.* `predict()` with LIME answers in 0.01–0.16 s; a Gemini call takes
+  6–8 s. Most users get the verdict at once, and it is sent even if Gemini
+  times out.
+- *Privacy.* Messages the model does not flag, which are mostly personal
+  chats, are never sent to an AI provider.
+- *A probability the review rule can price.* The calibrated classifier says,
+  for example, "4% chance of a scam", and the review rule above turns that into
+  an expected cost. An LLM's label carries no calibrated probability.
+- *A measured, repeatable decision.* The classifier gives the same answer every
+  time and has a test recall with a confidence interval. LLM answers can vary
+  between runs.
+
+The LLM is used at all because scam-type labels do not exist as public
+labelled data, so that stage cannot be trained. It runs on
+`gemini-flash-lite-latest`, because naming a scam type from a short message is
+a simple task and the free tier covers it. A deployment would use a paid or
+self-hosted model so customer messages are not used for training. If an LLM
+classifier ever beats this model on a local test set, it can sit behind the
+same `predict()`.
 
 ---
 
