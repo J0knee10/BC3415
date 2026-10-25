@@ -45,13 +45,15 @@ To rebuild n8n elsewhere: start n8n, then `python tools/n8n_setup.py --reset-led
 
 ## Git
 
-- Pushed on branch **`week10-11-labs`** (made from `origin/main` in a separate worktree), **not** on `main` and not on `indiv-submission`.
-  Reason: `indiv-submission` has two commits that were never pushed (individual-project prep), and pushing that branch would have published them.
-  Merge `week10-11-labs` into `main` on GitHub when ready.
-- The desktop working copy (on `indiv-submission`) still shows `Week 10/` and `Week 11/` as untracked, plus earlier uncommitted changes that are not from this session
-  (`Project/Group/SESSION_HANDOFF.md`, three `.docx` files). Nothing of those was committed.
+Everything is pushed (26 Oct, on request "push everything"):
+- **`indiv-submission`** (now on GitHub for the first time): the two individual-project commits, a commit with the Week 10/11 work + group brief +
+  GAI declarations + group handoff, and a merge of `week10-11-labs`. Working tree clean.
+- **`week10-11-labs`**: the Week 10/11 work alone, branched from `main`.
+- **`main`** was not changed. Merge `indiv-submission` into `main` on GitHub if everything should be on the default branch.
+- **`backup-before-fix` was deliberately NOT pushed**: it contains a 159 MB zip (over GitHub's 100 MB limit) and the past-assignments
+  reference pack, which includes other students' projects and `.env` files.
 
 ## Possible next steps (optional)
 
 - Record a short screen capture of the TagUI bot running (`run_bot.cmd`, visible browser) or of an n8n form submission, if a demo video is wanted.
-- Merge the branch into `main`.
+- Merge `indiv-submission` into `main`.
