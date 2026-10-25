@@ -1,0 +1,761 @@
+{
+  "id": "27",
+  "mode": "manual",
+  "status": "success",
+  "startedAt": "2026-10-25T17:59:40.454Z",
+  "stoppedAt": "2026-10-25T17:59:43.200Z",
+  "workflowId": "YHvLVUpMvmRpnDvk",
+  "workflow": "Week10 V4 | E3 - Daily AP exception digest",
+  "nodes": [
+    {
+      "node": "Run digest now (manual)",
+      "status": "success",
+      "items_out": 1,
+      "ms": 0,
+      "error": null
+    },
+    {
+      "node": "Load AP ledger",
+      "status": "success",
+      "items_out": 12,
+      "ms": 5,
+      "error": null
+    },
+    {
+      "node": "Summarise last 24 hours",
+      "status": "success",
+      "items_out": 1,
+      "ms": 5,
+      "error": null
+    },
+    {
+      "node": "Google Gemini Chat Model",
+      "status": "success",
+      "items_out": 0,
+      "ms": 1950,
+      "error": null
+    },
+    {
+      "node": "Gemini: manager briefing",
+      "status": "success",
+      "items_out": 1,
+      "ms": 1965,
+      "error": null
+    },
+    {
+      "node": "Guardrail: numbers must come from the data",
+      "status": "success",
+      "items_out": 1,
+      "ms": 5,
+      "error": null
+    },
+    {
+      "node": "Telegram: send digest",
+      "status": "success",
+      "items_out": 1,
+      "ms": 716,
+      "error": null
+    }
+  ],
+  "runData": {
+    "Run digest now (manual)": [
+      {
+        "startTime": 1792951180500,
+        "executionIndex": 0,
+        "source": [],
+        "hints": [],
+        "executionTime": 0,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {},
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Load AP ledger": [
+      {
+        "startTime": 1792951180501,
+        "executionIndex": 1,
+        "source": [
+          {
+            "previousNode": "Run digest now (manual)",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 5,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV201-02418",
+                  "channel": "api",
+                  "priority": "P3",
+                  "team_id": "T01",
+                  "invoice_id": "INV-201",
+                  "supplier": "ALPHA",
+                  "invoice_ref": "A-777",
+                  "amount_usd": 1250,
+                  "po_id": "PO-501",
+                  "bank_changed": "NO",
+                  "status": "READY_FOR_HUMAN_CHECK",
+                  "reason": "All V4 controls passed; human confirmation still required",
+                  "control_flags": "NONE",
+                  "received_at": "2026-10-25T17:58:22.418Z",
+                  "manager_approval_required": false,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "",
+                  "ai_guardrail": "NOT_REQUIRED",
+                  "telegram_text": "MERIDIAN AP V4 | 🟢 READY\nCase: AP-20261025-INV201-02418\nInvoice: INV-201 (api)\nSupplier: ALPHA  Ref: A-777\nAmount: $1250.00  PO: PO-501\nStatus: READY_FOR_HUMAN_CHECK\nFlags: NONE\nReason: All V4 controls passed; human confirmation still required\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "id": 1,
+                  "createdAt": "2026-10-25T17:58:22.423Z",
+                  "updatedAt": "2026-10-25T17:58:22.423Z"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              },
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV202-02419",
+                  "channel": "api",
+                  "priority": "P3",
+                  "team_id": "T01",
+                  "invoice_id": "INV-202",
+                  "supplier": "BETA",
+                  "invoice_ref": "B-431",
+                  "amount_usd": 8950,
+                  "po_id": "PO-502",
+                  "bank_changed": "NO",
+                  "status": "READY_FOR_HUMAN_CHECK",
+                  "reason": "All V4 controls passed; human confirmation still required",
+                  "control_flags": "NONE",
+                  "received_at": "2026-10-25T17:58:22.418Z",
+                  "manager_approval_required": false,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "",
+                  "ai_guardrail": "NOT_REQUIRED",
+                  "telegram_text": "MERIDIAN AP V4 | 🟢 READY\nCase: AP-20261025-INV202-02419\nInvoice: INV-202 (api)\nSupplier: BETA  Ref: B-431\nAmount: $8950.00  PO: PO-502\nStatus: READY_FOR_HUMAN_CHECK\nFlags: NONE\nReason: All V4 controls passed; human confirmation still required\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "id": 2,
+                  "createdAt": "2026-10-25T17:58:22.424Z",
+                  "updatedAt": "2026-10-25T17:58:22.424Z"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              },
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV203-02420",
+                  "channel": "api",
+                  "priority": "P2",
+                  "team_id": "T01",
+                  "invoice_id": "INV-203",
+                  "supplier": "GAMMA",
+                  "invoice_ref": "G-211",
+                  "amount_usd": 14800,
+                  "po_id": "",
+                  "bank_changed": "NO",
+                  "status": "REVIEW_MISSING_PO",
+                  "reason": "Purchase order missing; finance-manager approval also required",
+                  "control_flags": "MISSING_PO|HIGH_VALUE",
+                  "received_at": "2026-10-25T17:58:22.418Z",
+                  "manager_approval_required": true,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "Processing this high-value invoice without a purchase order risks unauthorized expenditure and budget discrepancies. Before approving, please verify the legitimacy of the expense with the vendor and obtain the required finance-manager sign-off.",
+                  "ai_guardrail": "PASSED",
+                  "telegram_text": "MERIDIAN AP V4 | 🟠 REVIEW\nCase: AP-20261025-INV203-02420\nInvoice: INV-203 (api)\nSupplier: GAMMA  Ref: G-211\nAmount: $14800.00  PO: -\nStatus: REVIEW_MISSING_PO\nFlags: MISSING_PO|HIGH_VALUE\nReason: Purchase order missing; finance-manager approval also required\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "id": 3,
+                  "createdAt": "2026-10-25T17:58:22.425Z",
+                  "updatedAt": "2026-10-25T17:58:28.587Z"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              },
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV204-02421",
+                  "channel": "api",
+                  "priority": "P1",
+                  "team_id": "T01",
+                  "invoice_id": "INV-204",
+                  "supplier": "ALPHA",
+                  "invoice_ref": "A-776",
+                  "amount_usd": 1250,
+                  "po_id": "PO-501",
+                  "bank_changed": "NO",
+                  "status": "HOLD_DUPLICATE",
+                  "reason": "Supplier and reference already in the historic posted-invoice fixture",
+                  "control_flags": "DUPLICATE",
+                  "received_at": "2026-10-25T17:58:22.418Z",
+                  "manager_approval_required": false,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "",
+                  "ai_guardrail": "NOT_REQUIRED",
+                  "telegram_text": "MERIDIAN AP V4 | 🔴 HOLD\nCase: AP-20261025-INV204-02421\nInvoice: INV-204 (api)\nSupplier: ALPHA  Ref: A-776\nAmount: $1250.00  PO: PO-501\nStatus: HOLD_DUPLICATE\nFlags: DUPLICATE\nReason: Supplier and reference already in the historic posted-invoice fixture\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "id": 4,
+                  "createdAt": "2026-10-25T17:58:22.425Z",
+                  "updatedAt": "2026-10-25T17:58:22.425Z"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              },
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV205-02422",
+                  "channel": "api",
+                  "priority": "P2",
+                  "team_id": "T01",
+                  "invoice_id": "INV-205",
+                  "supplier": "DELTA",
+                  "invoice_ref": "D-555",
+                  "amount_usd": 24600,
+                  "po_id": "PO-505",
+                  "bank_changed": "NO",
+                  "status": "REVIEW_MANAGER",
+                  "reason": "Finance-manager approval required (amount > $10,000)",
+                  "control_flags": "HIGH_VALUE",
+                  "received_at": "2026-10-25T17:58:22.418Z",
+                  "manager_approval_required": true,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "This invoice carries a financial risk of exceeding the standard threshold, which exposes the company to unverified large-scale spending. Before approving, check that the associated PO PO-505 has been fully budgeted and that the deliverables from DELTA have been satisfactorily received.",
+                  "ai_guardrail": "PASSED",
+                  "telegram_text": "MERIDIAN AP V4 | 🟠 REVIEW\nCase: AP-20261025-INV205-02422\nInvoice: INV-205 (api)\nSupplier: DELTA  Ref: D-555\nAmount: $24600.00  PO: PO-505\nStatus: REVIEW_MANAGER\nFlags: HIGH_VALUE\nReason: Finance-manager approval required (amount > $10,000)\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "id": 5,
+                  "createdAt": "2026-10-25T17:58:22.426Z",
+                  "updatedAt": "2026-10-25T17:58:28.675Z"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              },
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV206-02423",
+                  "channel": "api",
+                  "priority": "P2",
+                  "team_id": "T01",
+                  "invoice_id": "INV-206",
+                  "supplier": "BETA",
+                  "invoice_ref": "B-432",
+                  "amount_usd": 9150,
+                  "po_id": "PO-502",
+                  "bank_changed": "NO",
+                  "status": "REVIEW_PO_ALREADY_INVOICED",
+                  "reason": "PO-502 has already been invoiced under another reference (possible re-billing); finance-manager approval also required",
+                  "control_flags": "PO_ALREADY_INVOICED|SPLIT_SUSPECTED",
+                  "received_at": "2026-10-25T17:58:22.418Z",
+                  "manager_approval_required": true,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "The risk is that PO-502 may have already been billed under a different reference, and the split-invoice suspicion requires finance-manager approval. Please verify the previous invoices tied to PO-502 and obtain formal sign-off from the finance manager before proceeding.",
+                  "ai_guardrail": "PASSED",
+                  "telegram_text": "MERIDIAN AP V4 | 🟠 REVIEW\nCase: AP-20261025-INV206-02423\nInvoice: INV-206 (api)\nSupplier: BETA  Ref: B-432\nAmount: $9150.00  PO: PO-502\nStatus: REVIEW_PO_ALREADY_INVOICED\nFlags: PO_ALREADY_INVOICED|SPLIT_SUSPECTED\nReason: PO-502 has already been invoiced under another reference (possible re-billing); finance-manager approval also required\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "id": 6,
+                  "createdAt": "2026-10-25T17:58:22.426Z",
+                  "updatedAt": "2026-10-25T17:58:28.759Z"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              },
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV207-02424",
+                  "channel": "api",
+                  "priority": "P2",
+                  "team_id": "T01",
+                  "invoice_id": "INV-207",
+                  "supplier": "EPSILON",
+                  "invoice_ref": "E-007",
+                  "amount_usd": 500,
+                  "po_id": "PO-999",
+                  "bank_changed": "NO",
+                  "status": "REVIEW_UNKNOWN_PO",
+                  "reason": "PO-999 is not in the PO master table",
+                  "control_flags": "UNKNOWN_PO",
+                  "received_at": "2026-10-25T17:58:22.418Z",
+                  "manager_approval_required": false,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "Paying against an unverified purchase order creates the risk of unauthorized spending or billing discrepancies. Check with the procurement team to confirm if PO-999 is valid and should be added to the PO master table before proceeding.",
+                  "ai_guardrail": "PASSED",
+                  "telegram_text": "MERIDIAN AP V4 | 🟠 REVIEW\nCase: AP-20261025-INV207-02424\nInvoice: INV-207 (api)\nSupplier: EPSILON  Ref: E-007\nAmount: $500.00  PO: PO-999\nStatus: REVIEW_UNKNOWN_PO\nFlags: UNKNOWN_PO\nReason: PO-999 is not in the PO master table\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "id": 7,
+                  "createdAt": "2026-10-25T17:58:22.427Z",
+                  "updatedAt": "2026-10-25T17:58:28.842Z"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              },
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV208-02425",
+                  "channel": "api",
+                  "priority": "P1",
+                  "team_id": "T01",
+                  "invoice_id": "INV-208",
+                  "supplier": "GAMMA",
+                  "invoice_ref": "G-323",
+                  "amount_usd": 4700,
+                  "po_id": "PO-503",
+                  "bank_changed": "YES",
+                  "status": "HOLD_BANK_CHANGE",
+                  "reason": "Bank details changed; call the supplier on a known number before paying",
+                  "control_flags": "BANK_CHANGE",
+                  "received_at": "2026-10-25T17:58:22.418Z",
+                  "manager_approval_required": false,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "",
+                  "ai_guardrail": "NOT_REQUIRED",
+                  "telegram_text": "MERIDIAN AP V4 | 🔴 HOLD\nCase: AP-20261025-INV208-02425\nInvoice: INV-208 (api)\nSupplier: GAMMA  Ref: G-323\nAmount: $4700.00  PO: PO-503\nStatus: HOLD_BANK_CHANGE\nFlags: BANK_CHANGE\nReason: Bank details changed; call the supplier on a known number before paying\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "id": 8,
+                  "createdAt": "2026-10-25T17:58:22.427Z",
+                  "updatedAt": "2026-10-25T17:58:22.427Z"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              },
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV301-14618",
+                  "channel": "form",
+                  "priority": "P3",
+                  "team_id": "T01",
+                  "invoice_id": "INV-301",
+                  "supplier": "EPSILON",
+                  "invoice_ref": "E-101",
+                  "amount_usd": 6000,
+                  "po_id": "PO-506",
+                  "bank_changed": "NO",
+                  "status": "READY_FOR_HUMAN_CHECK",
+                  "reason": "All V4 controls passed; human confirmation still required",
+                  "control_flags": "NONE",
+                  "received_at": "2026-10-25T17:58:34.618Z",
+                  "manager_approval_required": false,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "",
+                  "ai_guardrail": "NOT_REQUIRED",
+                  "telegram_text": "MERIDIAN AP V4 | 🟢 READY\nCase: AP-20261025-INV301-14618\nInvoice: INV-301 (form)\nSupplier: EPSILON  Ref: E-101\nAmount: $6000.00  PO: PO-506\nStatus: READY_FOR_HUMAN_CHECK\nFlags: NONE\nReason: All V4 controls passed; human confirmation still required\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "id": 9,
+                  "createdAt": "2026-10-25T17:58:34.623Z",
+                  "updatedAt": "2026-10-25T17:58:34.623Z"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              },
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV302-20432",
+                  "channel": "form",
+                  "priority": "P2",
+                  "team_id": "T01",
+                  "invoice_id": "INV-302",
+                  "supplier": "EPSILON",
+                  "invoice_ref": "E-102",
+                  "amount_usd": 5500,
+                  "po_id": "PO-507",
+                  "bank_changed": "NO",
+                  "status": "REVIEW_SPLIT_SUSPECTED",
+                  "reason": "3 invoices from EPSILON in 7 days, each <= $10,000 but $12000.00 together (approval-limit splitting?)",
+                  "control_flags": "SPLIT_SUSPECTED",
+                  "received_at": "2026-10-25T17:58:40.432Z",
+                  "manager_approval_required": true,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "This invoice presents a risk of invoice splitting to bypass standard approval thresholds, as multiple submissions from EPSILON totaling $12,000.00 were received within a 7-day window. Please verify the business justification for these separate purchases and confirm whether they should have been consolidated under a single authorization.",
+                  "ai_guardrail": "PASSED",
+                  "telegram_text": "MERIDIAN AP V4 | 🟠 REVIEW\nCase: AP-20261025-INV302-20432\nInvoice: INV-302 (form)\nSupplier: EPSILON  Ref: E-102\nAmount: $5500.00  PO: PO-507\nStatus: REVIEW_SPLIT_SUSPECTED\nFlags: SPLIT_SUSPECTED\nReason: 3 invoices from EPSILON in 7 days, each <= $10,000 but $12000.00 together (approval-limit splitting?)\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "id": 10,
+                  "createdAt": "2026-10-25T17:58:40.436Z",
+                  "updatedAt": "2026-10-25T17:58:41.894Z"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              },
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV201B-26166",
+                  "channel": "form",
+                  "priority": "P1",
+                  "team_id": "T02",
+                  "invoice_id": "INV-201B",
+                  "supplier": "ALPHA",
+                  "invoice_ref": "A-777",
+                  "amount_usd": 1250,
+                  "po_id": "PO-501",
+                  "bank_changed": "NO",
+                  "status": "HOLD_DUPLICATE",
+                  "reason": "Supplier and reference already submitted (found in AP ledger table or earlier in this batch)",
+                  "control_flags": "DUPLICATE",
+                  "received_at": "2026-10-25T17:58:46.166Z",
+                  "manager_approval_required": false,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "",
+                  "ai_guardrail": "NOT_REQUIRED",
+                  "telegram_text": "MERIDIAN AP V4 | 🔴 HOLD\nCase: AP-20261025-INV201B-26166\nInvoice: INV-201B (form)\nSupplier: ALPHA  Ref: A-777\nAmount: $1250.00  PO: PO-501\nStatus: HOLD_DUPLICATE\nFlags: DUPLICATE\nReason: Supplier and reference already submitted (found in AP ledger table or earlier in this batch)\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "id": 11,
+                  "createdAt": "2026-10-25T17:58:46.171Z",
+                  "updatedAt": "2026-10-25T17:58:46.171Z"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              },
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV303-30550",
+                  "channel": "api",
+                  "priority": "P2",
+                  "team_id": "T03",
+                  "invoice_id": "INV-303",
+                  "supplier": "ZETA",
+                  "invoice_ref": "Z-1",
+                  "amount_usd": 3200,
+                  "po_id": "PO-508",
+                  "bank_changed": "NO",
+                  "status": "REVIEW_PO_CLOSED",
+                  "reason": "PO-508 is CLOSED, not OPEN",
+                  "control_flags": "PO_CLOSED",
+                  "received_at": "2026-10-25T17:58:50.550Z",
+                  "manager_approval_required": false,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "Approving this invoice carries the financial risk of paying against a completed or canceled purchase order, which can cause budget discrepancies. Please verify with the procurement team whether PO-508 should be officially reopened or if a new purchase order is required before proceeding.",
+                  "ai_guardrail": "PASSED",
+                  "telegram_text": "MERIDIAN AP V4 | 🟠 REVIEW\nCase: AP-20261025-INV303-30550\nInvoice: INV-303 (api)\nSupplier: ZETA  Ref: Z-1\nAmount: $3200.00  PO: PO-508\nStatus: REVIEW_PO_CLOSED\nFlags: PO_CLOSED\nReason: PO-508 is CLOSED, not OPEN\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "id": 12,
+                  "createdAt": "2026-10-25T17:58:50.555Z",
+                  "updatedAt": "2026-10-25T17:58:52.033Z"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Summarise last 24 hours": [
+      {
+        "startTime": 1792951180508,
+        "executionIndex": 2,
+        "source": [
+          {
+            "previousNode": "Load AP ledger",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 5,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "facts": {
+                    "window": "last 24 hours",
+                    "cases": 12,
+                    "by_priority": {
+                      "P3": 3,
+                      "P2": 6,
+                      "P1": 3
+                    },
+                    "by_status": {
+                      "READY_FOR_HUMAN_CHECK": 3,
+                      "REVIEW_MISSING_PO": 1,
+                      "HOLD_DUPLICATE": 2,
+                      "REVIEW_MANAGER": 1,
+                      "REVIEW_PO_ALREADY_INVOICED": 1,
+                      "REVIEW_UNKNOWN_PO": 1,
+                      "HOLD_BANK_CHANGE": 1,
+                      "REVIEW_SPLIT_SUSPECTED": 1,
+                      "REVIEW_PO_CLOSED": 1
+                    },
+                    "on_hold_usd": 7200,
+                    "needs_manager_usd": 54050,
+                    "ai_notes_blocked": 0,
+                    "holds": [
+                      "INV-204 ALPHA $1250 HOLD_DUPLICATE",
+                      "INV-208 GAMMA $4700 HOLD_BANK_CHANGE",
+                      "INV-201B ALPHA $1250 HOLD_DUPLICATE"
+                    ]
+                  },
+                  "facts_text": "{\"window\":\"last 24 hours\",\"cases\":12,\"by_priority\":{\"P3\":3,\"P2\":6,\"P1\":3},\"by_status\":{\"READY_FOR_HUMAN_CHECK\":3,\"REVIEW_MISSING_PO\":1,\"HOLD_DUPLICATE\":2,\"REVIEW_MANAGER\":1,\"REVIEW_PO_ALREADY_INVOICED\":1,\"REVIEW_UNKNOWN_PO\":1,\"HOLD_BANK_CHANGE\":1,\"REVIEW_SPLIT_SUSPECTED\":1,\"REVIEW_PO_CLOSED\":1},\"on_hold_usd\":7200,\"needs_manager_usd\":54050,\"ai_notes_blocked\":0,\"holds\":[\"INV-204 ALPHA $1250 HOLD_DUPLICATE\",\"INV-208 GAMMA $4700 HOLD_BANK_CHANGE\",\"INV-201B ALPHA $1250 HOLD_DUPLICATE\"]}",
+                  "header": "MERIDIAN AP V4 | DAILY DIGEST\nCases: 12 | P1 3 / P2 6 / P3 3\nOn hold: $7200.00 | Needs manager: $54050.00\nBy status: READY_FOR_HUMAN_CHECK 3, REVIEW_MISSING_PO 1, HOLD_DUPLICATE 2, REVIEW_MANAGER 1, REVIEW_PO_ALREADY_INVOICED 1, REVIEW_UNKNOWN_PO 1, HOLD_BANK_CHANGE 1, REVIEW_SPLIT_SUSPECTED 1, REVIEW_PO_CLOSED 1"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Google Gemini Chat Model": [
+      {
+        "startTime": 1792951180527,
+        "executionTime": 1950,
+        "executionIndex": 4,
+        "executionStatus": "success",
+        "source": [
+          {
+            "previousNode": "Gemini: manager briefing",
+            "previousNodeRun": 0
+          }
+        ],
+        "data": {
+          "ai_languageModel": [
+            [
+              {
+                "json": {
+                  "response": {
+                    "generations": [
+                      [
+                        {
+                          "text": "* **Action First:** Review the 1 manager review case worth $54,050.\n* **Total Value on Hold:** $7,200.\n* **Unusual:** There are 2 duplicate holds for the exact same amount ($1,250 for INV-204 ALPHA and INV-201B ALPHA).",
+                          "generationInfo": {
+                            "finishReason": "STOP",
+                            "index": 0
+                          }
+                        }
+                      ]
+                    ]
+                  },
+                  "tokenUsage": {
+                    "completionTokens": 75,
+                    "promptTokens": 257,
+                    "totalTokens": 332
+                  }
+                }
+              }
+            ]
+          ]
+        },
+        "inputOverride": {
+          "ai_languageModel": [
+            [
+              {
+                "json": {
+                  "messages": [
+                    "Human: You brief a finance manager. Using ONLY these facts (JSON), write 3 short bullet points: what needs action first, total value on hold, and anything unusual. Do not invent numbers, do not say anything was approved or paid.\n\nFacts: {\"window\":\"last 24 hours\",\"cases\":12,\"by_priority\":{\"P3\":3,\"P2\":6,\"P1\":3},\"by_status\":{\"READY_FOR_HUMAN_CHECK\":3,\"REVIEW_MISSING_PO\":1,\"HOLD_DUPLICATE\":2,\"REVIEW_MANAGER\":1,\"REVIEW_PO_ALREADY_INVOICED\":1,\"REVIEW_UNKNOWN_PO\":1,\"HOLD_BANK_CHANGE\":1,\"REVIEW_SPLIT_SUSPECTED\":1,\"REVIEW_PO_CLOSED\":1},\"on_hold_usd\":7200,\"needs_manager_usd\":54050,\"ai_notes_blocked\":0,\"holds\":[\"INV-204 ALPHA $1250 HOLD_DUPLICATE\",\"INV-208 GAMMA $4700 HOLD_BANK_CHANGE\",\"INV-201B ALPHA $1250 HOLD_DUPLICATE\"]}"
+                  ],
+                  "estimatedTokens": 225,
+                  "options": {
+                    "google_api_key": {
+                      "lc": 1,
+                      "type": "secret",
+                      "id": [
+                        "GOOGLE_API_KEY"
+                      ]
+                    },
+                    "base_url": "https://generativelanguage.googleapis.com",
+                    "model": "gemini-flash-lite-latest",
+                    "temperature": 0.1
+                  }
+                }
+              }
+            ]
+          ]
+        },
+        "metadata": {
+          "subRun": [
+            {
+              "node": "Google Gemini Chat Model",
+              "runIndex": 0
+            }
+          ]
+        }
+      }
+    ],
+    "Gemini: manager briefing": [
+      {
+        "startTime": 1792951180513,
+        "executionIndex": 3,
+        "source": [
+          {
+            "previousNode": "Summarise last 24 hours",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 1965,
+        "metadata": {
+          "tracing": {
+            "llm.tokens.in": 257,
+            "llm.tokens.out": 75,
+            "llm.tokens.total": 332,
+            "llm.tokens.estimated": false
+          }
+        },
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "text": "* **Action First:** Review the 1 manager review case worth $54,050.\n* **Total Value on Hold:** $7,200.\n* **Unusual:** There are 2 duplicate holds for the exact same amount ($1,250 for INV-204 ALPHA and INV-201B ALPHA)."
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Guardrail: numbers must come from the data": [
+      {
+        "startTime": 1792951182479,
+        "executionIndex": 5,
+        "source": [
+          {
+            "previousNode": "Gemini: manager briefing",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 5,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "facts": {
+                    "window": "last 24 hours",
+                    "cases": 12,
+                    "by_priority": {
+                      "P3": 3,
+                      "P2": 6,
+                      "P1": 3
+                    },
+                    "by_status": {
+                      "READY_FOR_HUMAN_CHECK": 3,
+                      "REVIEW_MISSING_PO": 1,
+                      "HOLD_DUPLICATE": 2,
+                      "REVIEW_MANAGER": 1,
+                      "REVIEW_PO_ALREADY_INVOICED": 1,
+                      "REVIEW_UNKNOWN_PO": 1,
+                      "HOLD_BANK_CHANGE": 1,
+                      "REVIEW_SPLIT_SUSPECTED": 1,
+                      "REVIEW_PO_CLOSED": 1
+                    },
+                    "on_hold_usd": 7200,
+                    "needs_manager_usd": 54050,
+                    "ai_notes_blocked": 0,
+                    "holds": [
+                      "INV-204 ALPHA $1250 HOLD_DUPLICATE",
+                      "INV-208 GAMMA $4700 HOLD_BANK_CHANGE",
+                      "INV-201B ALPHA $1250 HOLD_DUPLICATE"
+                    ]
+                  },
+                  "facts_text": "{\"window\":\"last 24 hours\",\"cases\":12,\"by_priority\":{\"P3\":3,\"P2\":6,\"P1\":3},\"by_status\":{\"READY_FOR_HUMAN_CHECK\":3,\"REVIEW_MISSING_PO\":1,\"HOLD_DUPLICATE\":2,\"REVIEW_MANAGER\":1,\"REVIEW_PO_ALREADY_INVOICED\":1,\"REVIEW_UNKNOWN_PO\":1,\"HOLD_BANK_CHANGE\":1,\"REVIEW_SPLIT_SUSPECTED\":1,\"REVIEW_PO_CLOSED\":1},\"on_hold_usd\":7200,\"needs_manager_usd\":54050,\"ai_notes_blocked\":0,\"holds\":[\"INV-204 ALPHA $1250 HOLD_DUPLICATE\",\"INV-208 GAMMA $4700 HOLD_BANK_CHANGE\",\"INV-201B ALPHA $1250 HOLD_DUPLICATE\"]}",
+                  "header": "MERIDIAN AP V4 | DAILY DIGEST\nCases: 12 | P1 3 / P2 6 / P3 3\nOn hold: $7200.00 | Needs manager: $54050.00\nBy status: READY_FOR_HUMAN_CHECK 3, REVIEW_MISSING_PO 1, HOLD_DUPLICATE 2, REVIEW_MANAGER 1, REVIEW_PO_ALREADY_INVOICED 1, REVIEW_UNKNOWN_PO 1, HOLD_BANK_CHANGE 1, REVIEW_SPLIT_SUSPECTED 1, REVIEW_PO_CLOSED 1",
+                  "ai_briefing": "* **Action First:** Review the 1 manager review case worth $54,050.\n* **Total Value on Hold:** $7,200.\n* **Unusual:** There are 2 duplicate holds for the exact same amount ($1,250 for INV-204 ALPHA and INV-201B ALPHA).",
+                  "ai_guardrail": "PASSED",
+                  "telegram_text": "MERIDIAN AP V4 | DAILY DIGEST\nCases: 12 | P1 3 / P2 6 / P3 3\nOn hold: $7200.00 | Needs manager: $54050.00\nBy status: READY_FOR_HUMAN_CHECK 3, REVIEW_MISSING_PO 1, HOLD_DUPLICATE 2, REVIEW_MANAGER 1, REVIEW_PO_ALREADY_INVOICED 1, REVIEW_UNKNOWN_PO 1, HOLD_BANK_CHANGE 1, REVIEW_SPLIT_SUSPECTED 1, REVIEW_PO_CLOSED 1\n\n* **Action First:** Review the 1 manager review case worth $54,050.\n* **Total Value on Hold:** $7,200.\n* **Unusual:** There are 2 duplicate holds for the exact same amount ($1,250 for INV-204 ALPHA and INV-201B ALPHA).\n\n(Advisory summary. Statuses come from the rules; nothing is approved or paid.)"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Telegram: send digest": [
+      {
+        "startTime": 1792951182484,
+        "executionIndex": 6,
+        "source": [
+          {
+            "previousNode": "Guardrail: numbers must come from the data",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 716,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "ok": true,
+                  "result": {
+                    "message_id": 50,
+                    "from": {
+                      "id": 8873365814,
+                      "is_bot": true,
+                      "first_name": "BC3415_Smishing_Triage",
+                      "username": "bc3415_smishing_bot"
+                    },
+                    "chat": {
+                      "id": "<redacted>",
+                      "first_name": "<redacted>",
+                      "last_name": "<redacted>",
+                      "username": "<redacted>",
+                      "type": "private"
+                    },
+                    "date": 1792951183,
+                    "text": "MERIDIAN AP V4 | DAILY DIGEST\nCases: 12 | P1 3 / P2 6 / P3 3\nOn hold: $7200.00 | Needs manager: $54050.00\nBy status: READY_FOR_HUMAN_CHECK 3, REVIEW_MISSING_PO 1, HOLD_DUPLICATE 2, REVIEW_MANAGER 1, REVIEW_PO_ALREADY_INVOICED 1, REVIEW_UNKNOWN_PO 1, HOLD_BANK_CHANGE 1, REVIEW_SPLIT_SUSPECTED 1, REVIEW_PO_CLOSED 1\n\n* **Action First:** Review the 1 manager review case worth $54,050.\n* **Total Value on Hold:** $7,200.\n* **Unusual:** There are 2 duplicate holds for the exact same amount ($1,250 for INV-204 ALPHA and INV-201B ALPHA).\n\n(Advisory summary. Statuses come from the rules; nothing is approved or paid.)"
+                  }
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ]
+  }
+}

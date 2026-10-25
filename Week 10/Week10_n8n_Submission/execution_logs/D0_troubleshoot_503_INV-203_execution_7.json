@@ -1,0 +1,313 @@
+{
+  "id": "7",
+  "mode": "webhook",
+  "status": "error",
+  "startedAt": "2026-10-25T17:48:37.043Z",
+  "stoppedAt": "2026-10-25T17:48:40.103Z",
+  "workflowId": "07t9k3nWvSJf9ZMP",
+  "workflow": "Week10 V3 | D - Invoice rules plus Gemini explanation",
+  "nodes": [
+    {
+      "node": "On form submission",
+      "status": "success",
+      "items_out": 1,
+      "ms": 0,
+      "error": null
+    },
+    {
+      "node": "Classify invoice",
+      "status": "success",
+      "items_out": 1,
+      "ms": 4,
+      "error": null
+    },
+    {
+      "node": "Save to Data Table",
+      "status": "success",
+      "items_out": 1,
+      "ms": 88,
+      "error": null
+    },
+    {
+      "node": "Google Gemini Chat Model",
+      "status": "error",
+      "items_out": 0,
+      "ms": 2524,
+      "error": "Service unavailable - try again later or consider setting this node to retry automatically (in the node settings)"
+    },
+    {
+      "node": "Basic LLM Chain — explain only",
+      "status": "error",
+      "items_out": 0,
+      "ms": 2918,
+      "error": "Service unavailable - try again later or consider setting this node to retry automatically (in the node settings)"
+    }
+  ],
+  "runData": {
+    "On form submission": [
+      {
+        "startTime": 1792950517092,
+        "executionIndex": 0,
+        "source": [],
+        "hints": [],
+        "executionTime": 0,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "team_id": "T02",
+                  "invoice_id": "INV-203",
+                  "supplier": "GAMMA",
+                  "invoice_ref": "G-211",
+                  "amount_usd": 14800,
+                  "po_id": "",
+                  "bank_changed": "NO",
+                  "submittedAt": "2026-10-26T01:48:36.995+08:00",
+                  "formMode": "production"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Classify invoice": [
+      {
+        "startTime": 1792950517093,
+        "executionIndex": 1,
+        "source": [
+          {
+            "previousNode": "On form submission",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 4,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "team_id": "T02",
+                  "invoice_id": "INV-203",
+                  "supplier": "GAMMA",
+                  "invoice_ref": "G-211",
+                  "amount_usd": 14800,
+                  "po_id": "",
+                  "bank_changed": "NO",
+                  "status": "REVIEW_MISSING_PO",
+                  "reason": "Purchase order missing; finance-manager approval also required (>$10,000)",
+                  "control_flags": "MISSING_PO|HIGH_VALUE",
+                  "received_at": "2026-10-25T17:48:37.097Z",
+                  "manager_approval_required": true,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "telegram_text": "MERIDIAN | SIMULATED INVOICE TRIAGE\nTeam: T02\nInvoice: INV-203\nSupplier: GAMMA\nAmount: $14800.00\nStatus: REVIEW_MISSING_PO\nFlags: MISSING_PO|HIGH_VALUE\nReason: Purchase order missing; finance-manager approval also required (>$10,000)\nHUMAN REVIEW REQUIRED. NO PAYMENT."
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Save to Data Table": [
+      {
+        "startTime": 1792950517097,
+        "executionIndex": 2,
+        "source": [
+          {
+            "previousNode": "Classify invoice",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 88,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "team_id": "T02",
+                  "invoice_id": "INV-203",
+                  "supplier": "GAMMA",
+                  "invoice_ref": "G-211",
+                  "amount_usd": 14800,
+                  "po_id": "",
+                  "bank_changed": "NO",
+                  "status": "REVIEW_MISSING_PO",
+                  "reason": "Purchase order missing; finance-manager approval also required (>$10,000)",
+                  "control_flags": "MISSING_PO|HIGH_VALUE",
+                  "received_at": "2026-10-25T17:48:37.097Z",
+                  "manager_approval_required": true,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "telegram_text": "MERIDIAN | SIMULATED INVOICE TRIAGE\nTeam: T02\nInvoice: INV-203\nSupplier: GAMMA\nAmount: $14800.00\nStatus: REVIEW_MISSING_PO\nFlags: MISSING_PO|HIGH_VALUE\nReason: Purchase order missing; finance-manager approval also required (>$10,000)\nHUMAN REVIEW REQUIRED. NO PAYMENT.",
+                  "id": 5,
+                  "createdAt": "2026-10-25T17:48:37.103Z",
+                  "updatedAt": "2026-10-25T17:48:37.103Z"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Google Gemini Chat Model": [
+      {
+        "startTime": 1792950517571,
+        "executionTime": 2524,
+        "executionIndex": 4,
+        "executionStatus": "error",
+        "source": [
+          {
+            "previousNode": "Basic LLM Chain — explain only",
+            "previousNodeRun": 0
+          }
+        ],
+        "data": {
+          "ai_languageModel": [
+            [
+              {
+                "json": {
+                  "messages": [
+                    "Human: You are an educational finance process analyst. Deterministic status: REVIEW_MISSING_PO. Reason: Purchase order missing; finance-manager approval also required (>$10,000). Write 2 short sentences to a finance reviewer in plain English. Explain why human approval is necessary. Do NOT change the status, claim a payment occurred, or ask for personal information."
+                  ],
+                  "estimatedTokens": 74,
+                  "options": {
+                    "google_api_key": {
+                      "lc": 1,
+                      "type": "secret",
+                      "id": [
+                        "GOOGLE_API_KEY"
+                      ]
+                    },
+                    "base_url": "https://generativelanguage.googleapis.com",
+                    "model": "gemini-3.8-flash",
+                    "temperature": 0.1
+                  }
+                }
+              }
+            ]
+          ]
+        },
+        "inputOverride": {
+          "ai_languageModel": [
+            [
+              {
+                "json": {
+                  "messages": [
+                    "Human: You are an educational finance process analyst. Deterministic status: REVIEW_MISSING_PO. Reason: Purchase order missing; finance-manager approval also required (>$10,000). Write 2 short sentences to a finance reviewer in plain English. Explain why human approval is necessary. Do NOT change the status, claim a payment occurred, or ask for personal information."
+                  ],
+                  "estimatedTokens": 74,
+                  "options": {
+                    "google_api_key": {
+                      "lc": 1,
+                      "type": "secret",
+                      "id": [
+                        "GOOGLE_API_KEY"
+                      ]
+                    },
+                    "base_url": "https://generativelanguage.googleapis.com",
+                    "model": "gemini-3.8-flash",
+                    "temperature": 0.1
+                  }
+                }
+              }
+            ]
+          ]
+        },
+        "metadata": {
+          "subRun": [
+            {
+              "node": "Google Gemini Chat Model",
+              "runIndex": 0
+            }
+          ]
+        },
+        "error": {
+          "message": "Service unavailable - try again later or consider setting this node to retry automatically (in the node settings)",
+          "timestamp": 1792950520095,
+          "name": "NodeApiError",
+          "description": "[GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent: [503 Service Unavailable] This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+          "context": {},
+          "cause": {
+            "name": "Error",
+            "message": "[GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent: [503 Service Unavailable] This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."
+          }
+        }
+      }
+    ],
+    "Basic LLM Chain — explain only": [
+      {
+        "startTime": 1792950517185,
+        "executionIndex": 3,
+        "source": [
+          {
+            "previousNode": "Save to Data Table",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 2918,
+        "executionStatus": "error",
+        "error": {
+          "level": "warning",
+          "shouldReport": true,
+          "description": "[GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent: [503 Service Unavailable] This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.",
+          "tags": {},
+          "timestamp": 1792950520095,
+          "context": {},
+          "functionality": "configuration-node",
+          "name": "NodeApiError",
+          "node": {
+            "parameters": {
+              "notice": "",
+              "modelName": "models/gemini-3.8-flash",
+              "options": {
+                "temperature": 0.1
+              }
+            },
+            "id": "3174d075-4aab-4790-982c-f87d6c05314d",
+            "name": "Google Gemini Chat Model",
+            "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+            "typeVersion": 1,
+            "position": [
+              990,
+              490
+            ],
+            "credentials": {
+              "googlePalmApi": {
+                "id": "GOmkCp8QXsb9VqbJ",
+                "name": "Google Gemini (Week 10)"
+              }
+            }
+          },
+          "messages": [
+            "[GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent: [503 Service Unavailable] This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."
+          ],
+          "httpCode": "503",
+          "message": "Service unavailable - try again later or consider setting this node to retry automatically (in the node settings)",
+          "stack": "NodeApiError: Service unavailable - try again later or consider setting this node to retry automatically (in the node settings)\n    at AsyncCaller.onFailedAttempt (D:\\Jon\\Uni\\BC3415\\_runtime\\n8n\\node_modules\\@n8n\\ai-utilities\\src\\utils\\failed-attempt-handler\\n8nLlmFailedAttemptHandler.ts:40:20)\n    at Object.onFailedAttempt (D:\\Jon\\Uni\\BC3415\\_runtime\\n8n\\node_modules\\@langchain\\core\\src\\utils\\async_caller.ts:424:50)\n    at onAttemptFailure (D:\\Jon\\Uni\\BC3415\\_runtime\\n8n\\node_modules\\@langchain\\core\\src\\utils\\p-retry\\index.js:114:17)\n    at Object.pRetry [as default] (D:\\Jon\\Uni\\BC3415\\_runtime\\n8n\\node_modules\\@langchain\\core\\src\\utils\\p-retry\\index.js:253:15)\n    at processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at run (D:\\Jon\\Uni\\BC3415\\_runtime\\n8n\\node_modules\\p-queue\\dist\\index.js:163:29)"
+        }
+      }
+    ]
+  }
+}

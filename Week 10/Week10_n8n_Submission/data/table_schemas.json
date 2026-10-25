@@ -1,0 +1,24 @@
+{
+  "Week10_Intake": [
+    ["team_id", "string"], ["student_alias", "string"], ["request_type", "string"], ["request_text", "string"],
+    ["received_at", "string"], ["notification_text", "string"]
+  ],
+  "Week10_Invoice_Triage": [
+    ["team_id", "string"], ["invoice_id", "string"], ["supplier", "string"], ["invoice_ref", "string"],
+    ["amount_usd", "number"], ["po_id", "string"], ["bank_changed", "string"], ["status", "string"],
+    ["reason", "string"], ["control_flags", "string"], ["received_at", "string"],
+    ["manager_approval_required", "boolean"], ["human_approval_required", "boolean"],
+    ["payment_authorized", "boolean"], ["ai_can_override_status", "boolean"], ["telegram_text", "string"]
+  ],
+  "Week10_PO_Master": [
+    ["po_id", "string"], ["supplier", "string"], ["amount_usd", "number"], ["status", "string"], ["buyer", "string"]
+  ],
+  "Week10_AP_Ledger_V4": [
+    ["case_id", "string"], ["channel", "string"], ["priority", "string"], ["team_id", "string"],
+    ["invoice_id", "string"], ["supplier", "string"], ["invoice_ref", "string"], ["amount_usd", "number"],
+    ["po_id", "string"], ["bank_changed", "string"], ["status", "string"], ["reason", "string"],
+    ["control_flags", "string"], ["received_at", "string"], ["manager_approval_required", "boolean"],
+    ["human_approval_required", "boolean"], ["payment_authorized", "boolean"], ["ai_can_override_status", "boolean"],
+    ["ai_commentary", "string"], ["ai_guardrail", "string"], ["telegram_text", "string"]
+  ]
+}

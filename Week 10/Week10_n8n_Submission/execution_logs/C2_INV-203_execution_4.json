@@ -1,0 +1,214 @@
+{
+  "id": "4",
+  "mode": "webhook",
+  "status": "success",
+  "startedAt": "2026-10-25T17:48:18.945Z",
+  "stoppedAt": "2026-10-25T17:48:19.765Z",
+  "workflowId": "BM7aPdLJUJ8eGfGC",
+  "workflow": "Week10 V3 | C - Invoice rules to Data Table to Telegram",
+  "nodes": [
+    {
+      "node": "On form submission",
+      "status": "success",
+      "items_out": 1,
+      "ms": 1,
+      "error": null
+    },
+    {
+      "node": "Classify invoice",
+      "status": "success",
+      "items_out": 1,
+      "ms": 4,
+      "error": null
+    },
+    {
+      "node": "Save to Data Table",
+      "status": "success",
+      "items_out": 1,
+      "ms": 81,
+      "error": null
+    },
+    {
+      "node": "Send Telegram notification",
+      "status": "success",
+      "items_out": 1,
+      "ms": 695,
+      "error": null
+    }
+  ],
+  "runData": {
+    "On form submission": [
+      {
+        "startTime": 1792950498984,
+        "executionIndex": 0,
+        "source": [],
+        "hints": [],
+        "executionTime": 1,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "team_id": "T01",
+                  "invoice_id": "INV-203",
+                  "supplier": "GAMMA",
+                  "invoice_ref": "G-211",
+                  "amount_usd": 14800,
+                  "po_id": "",
+                  "bank_changed": "NO",
+                  "submittedAt": "2026-10-26T01:48:18.910+08:00",
+                  "formMode": "production"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Classify invoice": [
+      {
+        "startTime": 1792950498985,
+        "executionIndex": 1,
+        "source": [
+          {
+            "previousNode": "On form submission",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 4,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "team_id": "T01",
+                  "invoice_id": "INV-203",
+                  "supplier": "GAMMA",
+                  "invoice_ref": "G-211",
+                  "amount_usd": 14800,
+                  "po_id": "",
+                  "bank_changed": "NO",
+                  "status": "REVIEW_MISSING_PO",
+                  "reason": "Purchase order missing; finance-manager approval also required (>$10,000)",
+                  "control_flags": "MISSING_PO|HIGH_VALUE",
+                  "received_at": "2026-10-25T17:48:18.989Z",
+                  "manager_approval_required": true,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "telegram_text": "MERIDIAN | SIMULATED INVOICE TRIAGE\nTeam: T01\nInvoice: INV-203\nSupplier: GAMMA\nAmount: $14800.00\nStatus: REVIEW_MISSING_PO\nFlags: MISSING_PO|HIGH_VALUE\nReason: Purchase order missing; finance-manager approval also required (>$10,000)\nHUMAN REVIEW REQUIRED. NO PAYMENT."
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Save to Data Table": [
+      {
+        "startTime": 1792950498989,
+        "executionIndex": 2,
+        "source": [
+          {
+            "previousNode": "Classify invoice",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 81,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "team_id": "T01",
+                  "invoice_id": "INV-203",
+                  "supplier": "GAMMA",
+                  "invoice_ref": "G-211",
+                  "amount_usd": 14800,
+                  "po_id": "",
+                  "bank_changed": "NO",
+                  "status": "REVIEW_MISSING_PO",
+                  "reason": "Purchase order missing; finance-manager approval also required (>$10,000)",
+                  "control_flags": "MISSING_PO|HIGH_VALUE",
+                  "received_at": "2026-10-25T17:48:18.989Z",
+                  "manager_approval_required": true,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "telegram_text": "MERIDIAN | SIMULATED INVOICE TRIAGE\nTeam: T01\nInvoice: INV-203\nSupplier: GAMMA\nAmount: $14800.00\nStatus: REVIEW_MISSING_PO\nFlags: MISSING_PO|HIGH_VALUE\nReason: Purchase order missing; finance-manager approval also required (>$10,000)\nHUMAN REVIEW REQUIRED. NO PAYMENT.",
+                  "id": 2,
+                  "createdAt": "2026-10-25T17:48:18.994Z",
+                  "updatedAt": "2026-10-25T17:48:18.994Z"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Send Telegram notification": [
+      {
+        "startTime": 1792950499070,
+        "executionIndex": 3,
+        "source": [
+          {
+            "previousNode": "Save to Data Table",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 695,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "ok": true,
+                  "result": {
+                    "message_id": 37,
+                    "from": {
+                      "id": 8873365814,
+                      "is_bot": true,
+                      "first_name": "BC3415_Smishing_Triage",
+                      "username": "bc3415_smishing_bot"
+                    },
+                    "chat": {
+                      "id": "<redacted>",
+                      "first_name": "<redacted>",
+                      "last_name": "<redacted>",
+                      "username": "<redacted>",
+                      "type": "private"
+                    },
+                    "date": 1792950499,
+                    "text": "MERIDIAN | SIMULATED INVOICE TRIAGE\nTeam: T01\nInvoice: INV-203\nSupplier: GAMMA\nAmount: $14800.00\nStatus: REVIEW_MISSING_PO\nFlags: MISSING_PO|HIGH_VALUE\nReason: Purchase order missing; finance-manager approval also required (>$10,000)\nHUMAN REVIEW REQUIRED. NO PAYMENT."
+                  }
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ]
+  }
+}

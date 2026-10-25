@@ -1,0 +1,6 @@
+id,team_id,student_alias,request_type,request_text,received_at,notification_text,createdAt,updatedAt
+1,T01,Alex,Invoice,Please check a synthetic $1250 invoice.,2026-10-25T17:47:21.261Z,"Week 10 class request
+Team: T01
+Alias: Alex
+Type: Invoice
+Request: Please check a synthetic $1250 invoice.",2026-10-25T09:47:21.267Z,2026-10-25T09:47:21.267Z

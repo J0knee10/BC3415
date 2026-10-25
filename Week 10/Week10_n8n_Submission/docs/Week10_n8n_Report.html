@@ -1,0 +1,134 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Week 10 n8n Lab</title><style>
+:root{--ink:#1d2433;--mute:#5a6475;--line:#e3e7ee;--head:#f3f5f9;--good:#1b7f3b;--bad:#a4161a}
+body{font-family:'Segoe UI',Arial,sans-serif;color:var(--ink);background:#fff;max-width:980px;margin:28px auto;padding:0 20px;line-height:1.45;font-size:14px}
+h1{font-size:24px;margin:0}h2{font-size:18px;margin:30px 0 8px;border-bottom:2px solid var(--line);padding-bottom:4px}h3{font-size:15px;margin:18px 0 6px}
+.sub{color:var(--mute);margin:4px 0 18px}table{border-collapse:collapse;width:100%;margin:8px 0 14px;font-size:12.5px}
+th,td{border-bottom:1px solid var(--line);padding:5px 7px;text-align:left;vertical-align:top}th{background:var(--head)}td.n{text-align:right}
+figure{margin:12px 0 18px}figure img{max-width:100%;border:1px solid var(--line)}figcaption{color:var(--mute);font-size:12px;margin-top:4px}
+pre{background:#f7f8fa;border:1px solid var(--line);padding:10px;font-size:11.5px;white-space:pre-wrap}
+.tiles{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}.tile{border:1px solid var(--line);border-radius:8px;padding:8px 12px;min-width:150px}.tile b{display:block;font-size:19px}
+code{font-size:12.5px}.ok{color:var(--good);font-weight:600}
+@media print{body{margin:0 auto}h2,h3{break-after:avoid}figure,table,pre{break-inside:avoid}}
+</style></head><body>
+<h1>AI workflow automation with n8n</h1>
+<div class="sub">BC3415 Week 10 &middot; Jonathan Low &middot; n8n 2.44.6 self-hosted (local) &middot; Telegram + Google Gemini &middot; synthetic data only</div>
+
+<h2>1. Summary</h2>
+<p>I installed and ran n8n locally, imported and configured all four lab workflows (A&ndash;D) with my own Telegram bot and Gemini key,
+and ran the guide's test cases. Every checkpoint on the lab's evidence sheet is met, and every execution is logged in <code>execution_logs/</code>.
+I then built a customised <b>V4 accounts-payable triage service</b>: five workflows that fix the limitations the lab guide itself lists (Appendix D and section 7.4):
+a hard-coded PO list, a duplicate check that never learns, and AI text that is never stored. V4 also adds new fraud controls,
+priority-based alerting, a batch API, a guardrail on the AI output, and a daily manager digest.</p>
+<div class="tiles">
+<div class="tile">Workflows built and run<b>9</b></div>
+<div class="tile">Executions logged<b>26</b></div>
+<div class="tile">Telegram messages sent<b>16</b></div>
+<div class="tile">Unit tests passing<b>22</b></div>
+<div class="tile">Payments authorised<b>0</b></div>
+</div>
+
+<h2>2. Setup</h2>
+<ul>
+<li><b>Route A (local)</b>, without Docker: n8n 2.44.6 installed with npm into a project folder, using a portable Node 24 (n8n 2.x needs Node &ge; 24; the
+machine's global Node 22 was left alone). Editor at <code>http://localhost:5678</code>, telemetry off, timezone Asia/Singapore.</li>
+<li>Telegram: my own bot from @BotFather. The recipient is my numeric private chat id (from <code>getUpdates</code> after sending <code>/start</code>), not the bot's id,
+which avoids the guide's "bot can't send messages to the bot" 403 error.</li>
+<li>Gemini: Google AI Studio key, stored as an n8n credential.</li>
+<li><b>No secrets in this submission.</b> Keys live only in n8n's encrypted credential store. The chat id is read at run time as
+<code>{{ $env.TELEGRAM_CHAT_ID }}</code>, so it isn't in any workflow JSON. Chat id, name and username are masked in screenshots and logs.</li>
+<li>Reproducible: <code>tools/n8n_setup.py</code> rebuilds everything on a fresh n8n: Data Tables, seeded PO master, credentials (from environment variables),
+workflow import with id wiring, and publishing.</li>
+</ul>
+<figure><img src="../screenshots/L1_workflow_list.png" style="max-width:820px"><figcaption>All nine workflows imported and published.</figcaption></figure>
+
+<h2>3. Lab workflows A&ndash;D (as supplied, configured)</h2>
+<figure><img src="../screenshots/A1_offline_workflow_executed.png" style="max-width:820px"><figcaption>A: offline check, 1 → 8 → 8 → 1 items.</figcaption></figure>
+<figure><img src="../screenshots/A2_offline_summary_output.png"><figcaption>A: Summary for class: cases = 8, two READY and one of each other status, exactly the guide&#x27;s Appendix A answer.</figcaption></figure>
+<table><tr><th>Flow</th><th>Case</th><th>Execution</th><th>Result</th><th>What happened</th><th>Telegram</th></tr><tr><td class="">B</td><td class="">INV request T01 / Alex</td><td class="">#2</td><td class="">success</td><td class="">row saved to Week10_Intake</td><td class="">ok=true, message_id 35</td></tr><tr><td class="">C</td><td class="">INV-201</td><td class="">#3</td><td class="">success</td><td class="">READY_FOR_HUMAN_CHECK (NONE); manager=false, paid=false</td><td class="">ok=true, message_id 36</td></tr><tr><td class="">C</td><td class="">INV-203</td><td class="">#4</td><td class="">success</td><td class="">REVIEW_MISSING_PO (MISSING_PO|HIGH_VALUE); manager=true, paid=false</td><td class="">ok=true, message_id 37</td></tr><tr><td class="">C</td><td class="">INV-204</td><td class="">#5</td><td class="">success</td><td class="">HOLD_DUPLICATE (HISTORIC_DUPLICATE); manager=false, paid=false</td><td class="">ok=true, message_id 38</td></tr><tr><td class="">C</td><td class="">INV-205</td><td class="">#6</td><td class="">success</td><td class="">REVIEW_MANAGER (HIGH_VALUE); manager=true, paid=false</td><td class="">ok=true, message_id 39</td></tr><tr><td class="">D</td><td class="">INV-203 (team T02)</td><td class="">#7</td><td class="">error</td><td class="">Gemini 3.8 Flash: 503 Service unavailable (see 6.1)</td><td class="">not sent</td></tr><tr><td class="">D</td><td class="">INV-203 (team T02)</td><td class="">#8</td><td class="">success</td><td class="">REVIEW_MISSING_PO + AI note</td><td class="">ok=true, message_id 40</td></tr></table>
+<figure><img src="../screenshots/B2_intake_execution_canvas.png" style="max-width:820px"><figcaption>B: form → Normalize intake → Data Table → Telegram, all green.</figcaption></figure>
+<figure><img src="../screenshots/B3_intake_telegram_output.png"><figcaption>B2 checkpoint: Telegram API returned ok=true with a message_id (recipient details masked).</figcaption></figure>
+<figure><img src="../screenshots/C6_invoice_INV-203_classify_output.png"><figcaption>C2 checkpoint: INV-203 is REVIEW_MISSING_PO with MISSING_PO|HIGH_VALUE, manager_approval_required=true, payment_authorized=false.</figcaption></figure>
+<figure><img src="../screenshots/T2_datatable_Week10_Invoice_Triage.png"><figcaption>C1 checkpoint: Week10_Invoice_Triage with its 16 application columns and the C/D rows.</figcaption></figure>
+<figure><img src="../screenshots/D3_gemini_join_output.png"><figcaption>D: Gemini&#x27;s explanation joined to the unchanged rule output; payment_authorized stays false.</figcaption></figure>
+<p><b>Evidence sheet (guide section 9.1):</b> A, B1 (<code>T1_datatable_Week10_Intake.png</code>), B2, C1, C2, C3 (INV-204 HOLD_DUPLICATE and INV-205 REVIEW_MANAGER in the table above),
+and D are all met, with execution logs for each.</p>
+
+<h2>4. Customisation: V4 AP triage service</h2>
+<h3>4.1 Business problem</h3>
+<p>Workflow C is a good teaching template, but the guide lists why it can't be used for real: the PO list is fixed in JavaScript, so finance can't update it;
+the duplicate check only knows one historic invoice, so the same invoice submitted twice is not caught ("Duplicate not detected on second submission");
+it treats each invoice alone, so it misses patterns across invoices; every outcome sends the same Telegram message; and the Gemini note in D is never saved.
+These are exactly the gaps that let duplicate payments and approval-limit splitting through in real accounts-payable teams.</p>
+
+<h3>4.2 Design</h3>
+<table><tr><th>Workflow</th><th>Role</th></tr><tr><td class=""><b>sub | Core rules + AP ledger</b></td><td class="">Loads the PO master and the whole ledger from Data Tables, runs the V4 rules, writes each case to <code>Week10_AP_Ledger_V4</code>. Deterministic; no AI.</td></tr><tr><td class=""><b>sub | Alerts + Gemini explanation</b></td><td class="">Switch by priority. P1 HOLD: instant Telegram, facts only. P2 REVIEW: Gemini explains, a guardrail checks it, the note is written back to the ledger row, then Telegram. P3 READY: no message (avoids alert fatigue).</td></tr><tr><td class=""><b>E1 AP intake form</b></td><td class="">Form for AP clerks; dropdown for the bank-change question; shows the triage result and case id when submitted.</td></tr><tr><td class=""><b>E2 Batch invoice API</b></td><td class=""><code>POST /webhook/meridian-ap-v4/batch</code> takes 1&ndash;200 invoices (e.g. from an OCR or email-capture system) and returns a JSON summary.</td></tr><tr><td class=""><b>E3 Daily AP exception digest</b></td><td class="">Every weekday at 08:30 SGT: counts and amounts from the ledger; Gemini writes a 3-bullet briefing; a guardrail checks that every number in it exists in the data.</td></tr></table>
+<figure><img src="../screenshots/V4_core_execution_canvas.png" style="max-width:820px"><figcaption>Core sub-workflow on the batch run: 8 invoices → PO master (7 rows) → ledger → rules → saved.</figcaption></figure>
+<figure><img src="../screenshots/V4_alerts_execution_canvas.png" style="max-width:820px"><figcaption>Alerts sub-workflow: 2 instant HOLD alerts, 4 Gemini-explained reviews (guardrail → ledger update → Telegram), 2 logged only.</figcaption></figure>
+
+<h3>4.3 Rules added (precedence order)</h3>
+<table><tr><th>#</th><th>Status</th><th>Condition</th><th>New in V4?</th></tr><tr><td class="">1</td><td class="">HOLD_INVALID_DATA</td><td class="">missing field or invalid amount</td><td class=""></td></tr><tr><td class="">2</td><td class="">HOLD_DUPLICATE</td><td class="">same supplier + reference anywhere in the ledger, earlier in the batch, or in the lab fixture (case and spaces ignored)</td><td class=""><b>persistent</b></td></tr><tr><td class="">3</td><td class="">HOLD_BANK_CHANGE</td><td class="">supplier says bank details changed</td><td class=""></td></tr><tr><td class="">4</td><td class="">REVIEW_MISSING_PO</td><td class="">no PO</td><td class=""></td></tr><tr><td class="">5</td><td class="">REVIEW_UNKNOWN_PO</td><td class="">PO not in the PO master <b>Data Table</b></td><td class="">table, not code</td></tr><tr><td class="">6</td><td class="">REVIEW_PO_CLOSED</td><td class="">PO status is not OPEN</td><td class=""><b>new</b></td></tr><tr><td class="">7</td><td class="">REVIEW_PO_SUPPLIER</td><td class="">PO belongs to another supplier</td><td class=""></td></tr><tr><td class="">8</td><td class="">REVIEW_PO_ALREADY_INVOICED</td><td class="">the PO was already used by an earlier invoice with a different reference (re-billing)</td><td class=""><b>new</b></td></tr><tr><td class="">9</td><td class="">REVIEW_AMOUNT_MISMATCH</td><td class="">amount differs from the PO</td><td class=""></td></tr><tr><td class="">10</td><td class="">REVIEW_SPLIT_SUSPECTED</td><td class="">same supplier, last 7 days, each &le; $10k but together &gt; $10k (approval-limit splitting); also sets manager approval</td><td class=""><b>new</b></td></tr><tr><td class="">11</td><td class="">REVIEW_MANAGER</td><td class="">amount &gt; $10,000</td><td class=""></td></tr><tr><td class="">12</td><td class="">READY_FOR_HUMAN_CHECK</td><td class="">all controls pass</td><td class=""></td></tr></table>
+<p>Each case also gets a <code>case_id</code> and a priority (P1/P2/P3). <code>human_approval_required=true</code>, <code>payment_authorized=false</code> and
+<code>ai_can_override_status=false</code> on every row, as in the lab. The rules are a plain function (<code>tests/classify_v4.js</code>) that the build script copies into the Code node,
+with 12 unit tests, including the guide's Appendix A answers for all 8 lab invoices.</p>
+
+<h2>5. V4 results</h2>
+<h3>5.1 The lab's 8 invoices sent as one API batch (executions #12, #13, #14)</h3>
+<table><tr><th>Invoice</th><th>Priority</th><th>Status</th><th>Flags</th><th>Route</th><th>AI guardrail</th></tr><tr><td class="">INV-201</td><td class="">P3</td><td class="">READY_FOR_HUMAN_CHECK</td><td class="">NONE</td><td class="">logged, digest only</td><td class="">-</td></tr><tr><td class="">INV-202</td><td class="">P3</td><td class="">READY_FOR_HUMAN_CHECK</td><td class="">NONE</td><td class="">logged, digest only</td><td class="">-</td></tr><tr><td class="">INV-203</td><td class="">P2</td><td class="">REVIEW_MISSING_PO</td><td class="">MISSING_PO|HIGH_VALUE</td><td class="">Gemini note + alert</td><td class="">PASSED</td></tr><tr><td class="">INV-204</td><td class="">P1</td><td class="">HOLD_DUPLICATE</td><td class="">DUPLICATE</td><td class="">instant HOLD alert</td><td class="">-</td></tr><tr><td class="">INV-205</td><td class="">P2</td><td class="">REVIEW_MANAGER</td><td class="">HIGH_VALUE</td><td class="">Gemini note + alert</td><td class="">PASSED</td></tr><tr><td class="">INV-206</td><td class="">P2</td><td class="">REVIEW_PO_ALREADY_INVOICED</td><td class="">PO_ALREADY_INVOICED|SPLIT_SUSPECTED</td><td class="">Gemini note + alert</td><td class="">PASSED</td></tr><tr><td class="">INV-207</td><td class="">P2</td><td class="">REVIEW_UNKNOWN_PO</td><td class="">UNKNOWN_PO</td><td class="">Gemini note + alert</td><td class="">PASSED</td></tr><tr><td class="">INV-208</td><td class="">P1</td><td class="">HOLD_BANK_CHANGE</td><td class="">BANK_CHANGE</td><td class="">instant HOLD alert</td><td class="">-</td></tr></table>
+<p>Same answers as the lab for 7 of 8. The difference is <b>INV-206</b>: V3 only saw an amount mismatch, while V4 sees that INV-202 already used PO-502 in the same batch
+(possible re-billing) and that the two BETA invoices ($8,950 + $9,150) look like a split.</p>
+<figure><img src="../screenshots/E2_batch_api_response_output.png"><figcaption>E2: JSON returned to the calling system.</figcaption></figure>
+
+<h3>5.2 Scenarios for the new controls</h3>
+<table><tr><th>Submitted</th><th>Executions (core / alerts)</th><th>Status</th><th>Reason</th><th>Telegram</th><th>AI</th></tr><tr><td class="">INV-301 EPSILON $6,000 PO-506 (form)</td><td class="">#16 / #17</td><td class="">READY_FOR_HUMAN_CHECK</td><td class="">All V4 controls passed; human confirmation still required</td><td class="">none (P3)</td><td class="">-</td></tr><tr><td class="">INV-302 EPSILON $5,500 PO-507 (form)</td><td class="">#19 / #20</td><td class="">REVIEW_SPLIT_SUSPECTED</td><td class="">3 invoices from EPSILON in 7 days, each &lt;= $10,000 but $12000.00 together (approval-limit splitting?)</td><td class="">ok=true, message_id 47</td><td class="">PASSED</td></tr><tr><td class="">INV-201B &#x27;alpha&#x27; &#x27; a-777 &#x27; $1,250 (form, re-keyed)</td><td class="">#22 / #23</td><td class="">HOLD_DUPLICATE</td><td class="">Supplier and reference already submitted (found in AP ledger table or earlier in this batch)</td><td class="">ok=true, message_id 48</td><td class="">-</td></tr><tr><td class="">INV-303 ZETA $3,200 PO-508 (API)</td><td class="">#25 / #26</td><td class="">REVIEW_PO_CLOSED</td><td class="">PO-508 is CLOSED, not OPEN</td><td class="">ok=true, message_id 49</td><td class="">PASSED</td></tr></table>
+<figure><img src="../screenshots/E1_split_part2_INV-302_1_form_filled.png" style="max-width:460px"><figcaption>E1: the AP clerk form (INV-302).</figcaption></figure>
+<figure><img src="../screenshots/E1_split_part2_INV-302_2_form_response.png" style="max-width:460px"><figcaption>E1: result shown to the clerk: split suspected. The rule counted three EPSILON invoices this week (INV-207 $500 from the batch, INV-301, INV-302).</figcaption></figure>
+<p>Gemini's note for INV-302 (guardrail PASSED):</p><pre>This invoice presents a risk of invoice splitting to bypass standard approval thresholds, as multiple submissions from EPSILON totaling $12,000.00 were received within a 7-day window. Please verify the business justification for these separate purchases and confirm whether they should have been consolidated under a single authorization.</pre>
+<figure><img src="../screenshots/T4_datatable_Week10_AP_Ledger_V4.png"><figcaption>Week10_AP_Ledger_V4 after all scenarios: 12 cases from the API and the form.</figcaption></figure>
+
+<h3>5.3 Daily digest (E3, execution #27, guardrail PASSED)</h3>
+<pre>MERIDIAN AP V4 | DAILY DIGEST
+Cases: 12 | P1 3 / P2 6 / P3 3
+On hold: $7200.00 | Needs manager: $54050.00
+By status: READY_FOR_HUMAN_CHECK 3, REVIEW_MISSING_PO 1, HOLD_DUPLICATE 2, REVIEW_MANAGER 1, REVIEW_PO_ALREADY_INVOICED 1, REVIEW_UNKNOWN_PO 1, HOLD_BANK_CHANGE 1, REVIEW_SPLIT_SUSPECTED 1, REVIEW_PO_CLOSED 1
+
+* **Action First:** Review the 1 manager review case worth $54,050.
+* **Total Value on Hold:** $7,200.
+* **Unusual:** There are 2 duplicate holds for the exact same amount ($1,250 for INV-204 ALPHA and INV-201B ALPHA).
+
+(Advisory summary. Statuses come from the rules; nothing is approved or paid.)</pre>
+<figure><img src="../screenshots/E3_digest_2_execution_canvas.png" style="max-width:820px"><figcaption>E3: ledger → deterministic summary → Gemini briefing → number guardrail → Telegram.</figcaption></figure>
+
+<h2>6. Problems met and how they were fixed</h2>
+<h3>6.1 Gemini 503 (lab D, execution #7)</h3>
+<p>The template's <code>models/gemini-3.8-flash</code> answered "Service unavailable". A direct API check showed 3.8-flash and flash-latest overloaded, while
+<code>gemini-flash-lite-latest</code> answered normally. Following the guide's troubleshooting advice ("choose another currently accessible model"), workflow D now uses
+flash-lite with n8n's <i>Retry on fail</i> (3 tries, 5 s apart). Re-run #8: success.</p>
+<figure><img src="../screenshots/D0_troubleshoot_503_canvas.png" style="max-width:760px"><figcaption>The failed run, kept as evidence.</figcaption></figure>
+<h3>6.2 Telegram "can't parse entities" (V4 alerts, first run)</h3>
+<p>The V4 alert text has status codes like <code>HOLD_DUPLICATE</code>, and Telegram read the underscores as Markdown. The lab template avoids this with
+<code>parse_mode: None</code>, which I had left out of my new Telegram nodes. Fixed, ledger reset, all scenarios re-run.</p>
+<h3>6.3 Other setup issues</h3>
+<ul><li>n8n 2.x needs Node &ge; 24, so I used a portable Node 24 rather than changing the global install.</li>
+<li>n8n 2.x will only publish a workflow if the sub-workflows it calls are published, so the setup script publishes sub-workflows first.</li></ul>
+
+<h2>7. AI boundaries and reflection</h2>
+<p><b>Is this an agent?</b> No. As the guide says, these are fixed workflows with a model in an advisory slot. In V4 the model writes text only; it
+cannot change a status, call a tool, approve or pay. Its output passes through code guardrails, tested in <code>tests/test_guardrails.js</code> against claims like
+"has been approved for payment", requests for bank details, a different status name, and invented numbers in the digest.</p>
+<p><b>Two places where deterministic rules beat LLM judgement:</b></p>
+<ol><li><b>Duplicate and re-billing detection.</b> Whether supplier + reference already exists, or a PO is already used, is an exact lookup over every
+earlier invoice. Rules get it right every time and can be audited; a model reading invoices one at a time cannot see the history and could be talked out of it.</li>
+<li><b>Approval thresholds and split detection.</b> "&gt; $10,000" and "the sum this week &gt; $10,000" are policy, not opinion. They must give the same answer
+on every run, and an auditor must be able to replay them. The model only explains why the rule fired.</li></ol>
+<p><b>Limitations:</b></p>
+<ul><li><b>Static fixtures (lab):</b> V3's PO master and one-row history are constants in code, so they go stale and miss real duplicates. V4 moves both into
+Data Tables, but the PO table is still a manual copy, not a live ERP feed.</li>
+<li><b>Guardrails check form, not meaning.</b> In the digest, Gemini wrote "the 1 manager review case worth $54,050", but $54,050 is the total across four cases
+needing a manager. Each number exists in the data, so the guardrail passed it. The deterministic header above the AI text is the figure to rely on.</li>
+<li>Split detection uses supplier name and a 7-day window; a real system would also match supplier ids, bank accounts and invoice dates.</li>
+<li>The local n8n is not reachable from the internet (forms and the webhook work on this machine only), and the webhook has no authentication. Production would need
+HTTPS, header auth and a unique constraint on supplier + reference.</li></ul>
+
+<h2>8. Files</h2>
+<table><tr><th>Path</th><th>Contents</th></tr><tr><td class="">workflows/lab_*.json</td><td class="">Lab workflows A&ndash;D as configured (chat id as an env expression; D on flash-lite with retries)</td></tr><tr><td class="">workflows/v4_*.json</td><td class="">The five V4 workflows (generated by tools/build_v4_workflows.js)</td></tr><tr><td class="">execution_logs/</td><td class="">Every execution: per-node status and full data, decoded from n8n's format, personal identifiers masked</td></tr><tr><td class="">screenshots/</td><td class="">Forms, canvases with run data, node outputs, Data Tables, workflow and credential lists</td></tr><tr><td class="">data/</td><td class="">Table schemas, PO master seed, API test requests and responses, CSV exports of all four Data Tables</td></tr><tr><td class="">tests/</td><td class="">classify_v4.js (rules) + 12 rule tests + 10 guardrail tests (node tests/test_*.js)</td></tr><tr><td class="">tools/</td><td class="">n8n_setup.py (rebuild), run_v4_scenarios.py, submit_form.py, capture_screenshots.py, build_v4_workflows.js</td></tr></table>
+</body></html>

@@ -1,0 +1,195 @@
+{
+  "name": "Week10 V4 | E2 - Batch invoice API",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "meridian-ap-v4/batch",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "00000000-0000-4000-8000-000000000027",
+      "name": "POST /webhook/meridian-ap-v4/batch",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "00000000-0000-4000-8000-000000000026"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Accepts {invoices:[...]} or a single invoice object, e.g. from an OCR/email-capture system.\nconst body = $input.first().json.body || {};\nconst list = Array.isArray(body.invoices) ? body.invoices : [body];\nif (!list.length || list.length > 200) throw new Error('Send 1-200 invoices per batch');\nreturn list.map(inv => ({ json: { ...inv, team_id: inv.team_id || body.team_id || 'API', channel: 'api' } }));"
+      },
+      "id": "00000000-0000-4000-8000-000000000028",
+      "name": "Split batch into invoices",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "Week10 V4 | sub | Core rules + AP ledger",
+          "cachedResultName": "Week10 V4 | sub | Core rules + AP ledger"
+        },
+        "mode": "once",
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "00000000-0000-4000-8000-000000000029",
+      "name": "Run V4 core (rules + ledger)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "Week10 V4 | sub | Alerts + Gemini explanation",
+          "cachedResultName": "Week10 V4 | sub | Alerts + Gemini explanation"
+        },
+        "mode": "once",
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "id": "00000000-0000-4000-8000-000000000030",
+      "name": "Start alerts (no wait)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        720,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const cases = $('Run V4 core (rules + ledger)').all().map(i => i.json);\nconst by = (k) => cases.reduce((m, c) => (m[c[k]] = (m[c[k]] || 0) + 1, m), {});\nreturn [{ json: { received: cases.length, by_priority: by('priority'), by_status: by('status'), payment_authorized: false,\n  cases: cases.map(c => ({ case_id: c.case_id, invoice_id: c.invoice_id, status: c.status, priority: c.priority,\n    control_flags: c.control_flags, manager_approval_required: c.manager_approval_required, reason: c.reason })) } }];"
+      },
+      "id": "00000000-0000-4000-8000-000000000031",
+      "name": "Build API response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "firstIncomingItem",
+        "options": {}
+      },
+      "id": "00000000-0000-4000-8000-000000000032",
+      "name": "Respond to caller",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1200,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "POST /webhook/meridian-ap-v4/batch": {
+      "main": [
+        [
+          {
+            "node": "Split batch into invoices",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split batch into invoices": {
+      "main": [
+        [
+          {
+            "node": "Run V4 core (rules + ledger)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run V4 core (rules + ledger)": {
+      "main": [
+        [
+          {
+            "node": "Start alerts (no wait)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start alerts (no wait)": {
+      "main": [
+        [
+          {
+            "node": "Build API response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build API response": {
+      "main": [
+        [
+          {
+            "node": "Respond to caller",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Singapore",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

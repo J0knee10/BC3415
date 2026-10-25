@@ -1,0 +1,191 @@
+{
+  "id": "2",
+  "mode": "webhook",
+  "status": "success",
+  "startedAt": "2026-10-25T17:47:21.216Z",
+  "stoppedAt": "2026-10-25T17:47:22.097Z",
+  "workflowId": "24CUZfiSO3B0f1QW",
+  "workflow": "Week10 V3 | B - Intake to Data Table to Telegram",
+  "nodes": [
+    {
+      "node": "On form submission",
+      "status": "success",
+      "items_out": 1,
+      "ms": 0,
+      "error": null
+    },
+    {
+      "node": "Normalize intake",
+      "status": "success",
+      "items_out": 1,
+      "ms": 4,
+      "error": null
+    },
+    {
+      "node": "Save to Data Table",
+      "status": "success",
+      "items_out": 1,
+      "ms": 72,
+      "error": null
+    },
+    {
+      "node": "Send Telegram notification",
+      "status": "success",
+      "items_out": 1,
+      "ms": 764,
+      "error": null
+    }
+  ],
+  "runData": {
+    "On form submission": [
+      {
+        "startTime": 1792950441257,
+        "executionIndex": 0,
+        "source": [],
+        "hints": [],
+        "executionTime": 0,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "team_id": "T01",
+                  "student_alias": "Alex",
+                  "request_type": "Invoice",
+                  "request_text": "Please check a synthetic $1250 invoice.",
+                  "submittedAt": "2026-10-26T01:47:21.174+08:00",
+                  "formMode": "production"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Normalize intake": [
+      {
+        "startTime": 1792950441257,
+        "executionIndex": 1,
+        "source": [
+          {
+            "previousNode": "On form submission",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 4,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "team_id": "T01",
+                  "student_alias": "Alex",
+                  "request_type": "Invoice",
+                  "request_text": "Please check a synthetic $1250 invoice.",
+                  "received_at": "2026-10-25T17:47:21.261Z",
+                  "notification_text": "Week 10 class request\nTeam: T01\nAlias: Alex\nType: Invoice\nRequest: Please check a synthetic $1250 invoice."
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Save to Data Table": [
+      {
+        "startTime": 1792950441261,
+        "executionIndex": 2,
+        "source": [
+          {
+            "previousNode": "Normalize intake",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 72,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "team_id": "T01",
+                  "student_alias": "Alex",
+                  "request_type": "Invoice",
+                  "request_text": "Please check a synthetic $1250 invoice.",
+                  "received_at": "2026-10-25T17:47:21.261Z",
+                  "notification_text": "Week 10 class request\nTeam: T01\nAlias: Alex\nType: Invoice\nRequest: Please check a synthetic $1250 invoice.",
+                  "id": 1,
+                  "createdAt": "2026-10-25T17:47:21.267Z",
+                  "updatedAt": "2026-10-25T17:47:21.267Z"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Send Telegram notification": [
+      {
+        "startTime": 1792950441333,
+        "executionIndex": 3,
+        "source": [
+          {
+            "previousNode": "Save to Data Table",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 764,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "ok": true,
+                  "result": {
+                    "message_id": 35,
+                    "from": {
+                      "id": 8873365814,
+                      "is_bot": true,
+                      "first_name": "BC3415_Smishing_Triage",
+                      "username": "bc3415_smishing_bot"
+                    },
+                    "chat": {
+                      "id": "<redacted>",
+                      "first_name": "<redacted>",
+                      "last_name": "<redacted>",
+                      "username": "<redacted>",
+                      "type": "private"
+                    },
+                    "date": 1792950441,
+                    "text": "Week 10 class request\nTeam: T01\nAlias: Alex\nType: Invoice\nRequest: Please check a synthetic $1250 invoice."
+                  }
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ]
+  }
+}

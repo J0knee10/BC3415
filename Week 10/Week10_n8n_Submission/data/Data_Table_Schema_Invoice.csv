@@ -1,0 +1,17 @@
+field_name,n8n_data_table_type
+team_id,String
+invoice_id,String
+supplier,String
+invoice_ref,String
+amount_usd,Number
+po_id,String
+bank_changed,String
+status,String
+reason,String
+control_flags,String
+received_at,String
+manager_approval_required,Boolean
+human_approval_required,Boolean
+payment_authorized,Boolean
+ai_can_override_status,Boolean
+telegram_text,String

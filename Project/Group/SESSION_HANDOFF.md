@@ -119,6 +119,7 @@ Also possible: bring back **VeriAssist** (DBS card disputes), narrowed to choosi
 
 | File | What it is |
 | --- | --- |
+| `Project Brief (Carousell Dispute Agent).docx` | **Current brief** (25 Oct). A Word export of the Claude Doc, including the work split and timeline. The Claude Doc is the master copy; export again after edits |
 | `Project Brief.docx` | PolicyPatch brief (version 2), written 16 Oct. Most details are Claude's proposals, not yet agreed by the group |
 | `Project Brief (VeriAssist, superseded).docx` | The old VeriAssist brief |
 | `Project Idea (original backup).docx` | The five original ideas: wealth-platform support agent, annual-report narrative vs numbers, accounts-payable three-way match, regulatory change tracker, card disputes |

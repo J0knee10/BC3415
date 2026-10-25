@@ -1,0 +1,7 @@
+field_name,n8n_data_table_type
+team_id,String
+student_alias,String
+request_type,String
+request_text,String
+received_at,String
+notification_text,String

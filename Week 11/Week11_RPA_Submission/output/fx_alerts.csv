@@ -1,0 +1,12 @@
+logged_at,rate_date,currency,alert_type,detail,sgd_per_unit,day_change_pct,vs_1m_avg_pct,message
+2026-10-26 00:51:47,2026-10-23,GBP,OVERDUE_INVOICE,INV-F106,,,,Thames Analytics Ltd was due 2026-10-24
+2026-10-26 00:51:47,2026-10-23,XYZ,INVOICE_EXCEPTION,INV-F110,,,,No ECB reference rate for XYZ - check supplier master / convert manually
+2026-10-26 00:53:15,2026-10-23,GBP,OVERDUE_INVOICE,INV-F106,,,,Thames Analytics Ltd was due 2026-10-24
+2026-10-26 00:53:15,2026-10-23,XYZ,INVOICE_EXCEPTION,INV-F110,,,,No ECB reference rate for XYZ - check supplier master / convert manually
+2026-10-26 00:54:49,2026-10-23,EUR,FX_MOVE,OFF_1M_AVERAGE,1.431000,-0.035,-0.579,"SGD per EUR moved -0.03% vs 2026-10-22, -0.58% vs 1-month average"
+2026-10-26 00:54:49,2026-10-23,JPY,FX_MOVE,OFF_1M_AVERAGE,0.008153,0.227,0.623,"SGD per JPY moved 0.23% vs 2026-10-22, 0.62% vs 1-month average"
+2026-10-26 00:54:49,2026-10-23,GBP,FX_MOVE,OFF_1M_AVERAGE,1.709106,0.015,0.659,"SGD per GBP moved 0.02% vs 2026-10-22, 0.66% vs 1-month average"
+2026-10-26 00:54:49,2026-10-23,GBP,OVERDUE_INVOICE,INV-F106,,,,Thames Analytics Ltd was due 2026-10-24
+2026-10-26 00:54:49,2026-10-23,XYZ,INVOICE_EXCEPTION,INV-F110,,,,No ECB reference rate for XYZ - check supplier master / convert manually
+2026-10-26 00:56:22,2026-10-23,GBP,OVERDUE_INVOICE,INV-F106,,,,Thames Analytics Ltd was due 2026-10-24
+2026-10-26 00:56:22,2026-10-23,XYZ,INVOICE_EXCEPTION,INV-F110,,,,No ECB reference rate for XYZ - check supplier master / convert manually
