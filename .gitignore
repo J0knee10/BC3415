@@ -223,3 +223,9 @@ Project/BC 3415 3409 AI - Past Assignments and Group Project References v003.zip
 
 # Week 8 chest X-ray dataset (4.7 GB; download from the Kaggle link in Week 8 Image/datachest-xray-pneumonia.txt)
 Week 8 Image/data/
+
+# Individual project: the video and the zip are over GitHub's 100 MB limit, so
+# they stay local (the zip is rebuilt from Project/Smishing_Triage/).
+Project/Smishing_Triage.zip
+Project/*/Video/
+~$*

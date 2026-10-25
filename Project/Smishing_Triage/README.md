@@ -10,7 +10,9 @@ message in the same class. For a user, one wastes three seconds and the other
 costs them thousands of dollars. Separating them is what this project is for.
 
 For the problem framing, results and limitations, see the technical writeup,
-`Smishing_Triage_Writeup.pdf`. This file is the developer's guide.
+`Smishing_Triage_Writeup.pdf`. The video walkthrough is
+`Video/VideoSubmission.mp4`, and the slides shown in it are
+`Smishing_Triage_Slides.pptx`. This file is the developer's guide.
 
 **How it maps to the brief.** The brief's retail case combines a text verdict,
 customer images and a joint flag. This project follows the same pattern for a
@@ -385,8 +387,8 @@ table shows how the figures move with the choice.
 **The LLM never makes the decision.** `scam_type.enrich()` gates on the trained
 model's verdict, so the enrichment runs only on messages already flagged as
 smishing. No metric depends on the scam-type label; as a spot check, it matches
-the hand label on 30 of the 36 Singapore scams the model caught, with one call
-timing out (`reports/scam_type_eval.csv`).
+the hand label on 30 of the 36 Singapore scams the model caught
+(`reports/scam_type_eval.csv`; LLM answers can vary between runs).
 
 **Why two steps, classifier then LLM, and what the gate saves.** The figures
 below were measured on 24 October 2026. They come from one-off checks, not
