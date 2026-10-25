@@ -223,3 +223,8 @@ Project/BC 3415 3409 AI - Past Assignments and Group Project References v003.zip
 
 # Week 8 chest X-ray dataset (4.7 GB; download from the Kaggle link in Week 8 Image/datachest-xray-pneumonia.txt)
 Week 8 Image/data/
+
+# Local tool runtimes for Week 10/11 labs (portable Node, n8n, TagUI, n8n data with encrypted credentials)
+_runtime/
+# n8n instance ids written by Week 10 tools/n8n_setup.py (machine-specific)
+*.local.json

@@ -1,0 +1,162 @@
+{
+  "name": "Week10 V3 | B - Intake to Data Table to Telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Week 10 business request",
+        "formDescription": "Synthetic classroom data only. Do not enter phone numbers or secrets.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "team_id",
+              "fieldName": "team_id",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "student_alias",
+              "fieldName": "student_alias",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "request_type",
+              "fieldName": "request_type",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "request_text",
+              "fieldName": "request_text",
+              "fieldType": "textarea",
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "onReceived",
+        "options": {
+          "path": "week10-intake",
+          "respondWithOptions": {
+            "values": {
+              "formSubmittedText": "Thank you. This is a classroom simulation; no payment is authorized."
+            }
+          }
+        }
+      },
+      "id": "e752a7f3-a98d-48e3-9997-a75e152ac763",
+      "name": "On form submission",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        120,
+        240
+      ],
+      "webhookId": "c183f96d-b1a1-4b89-9e36-222da4559c56"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Stage A: Normalize the form. No secrets; mock educational use only.\nreturn $input.all().map(item => {\n  const d=item.json;\n  const team_id=String(d.team_id??'').trim().slice(0,20);\n  const student_alias=String(d.student_alias??'').trim().slice(0,60);\n  const request_type=String(d.request_type??'General').trim().slice(0,50);\n  const request_text=String(d.request_text??'').trim().slice(0,500);\n  return {json:{team_id,student_alias,request_type,request_text,\n    received_at:new Date().toISOString(),\n    notification_text:`Week 10 class request\\nTeam: ${team_id}\\nAlias: ${student_alias}\\nType: ${request_type}\\nRequest: ${request_text}`}};\n});",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "2a510d04-779f-429a-ae34-0127cc6edd4a",
+      "name": "Normalize intake",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Week10_Intake"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "6600e1d7-d5c5-4a30-b9f3-0abe7f972a47",
+      "name": "Save to Data Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        690,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "={{ $(\"Normalize intake\").first().json.notification_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "None"
+        }
+      },
+      "id": "517b8f38-abae-4797-9d20-03b71ba7c415",
+      "name": "Send Telegram notification",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        980,
+        240
+      ]
+    }
+  ],
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Normalize intake",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize intake": {
+      "main": [
+        [
+          {
+            "node": "Save to Data Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Data Table": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "tags": [],
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

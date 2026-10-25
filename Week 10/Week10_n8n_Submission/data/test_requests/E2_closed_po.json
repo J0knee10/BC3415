@@ -1,0 +1,9 @@
+{
+  "team_id": "T03",
+  "invoice_id": "INV-303",
+  "supplier": "ZETA",
+  "invoice_ref": "Z-1",
+  "amount_usd": 3200,
+  "po_id": "PO-508",
+  "bank_changed": "NO"
+}

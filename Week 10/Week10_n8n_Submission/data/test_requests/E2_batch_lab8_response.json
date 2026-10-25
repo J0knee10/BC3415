@@ -1,0 +1,92 @@
+{
+  "received": 8,
+  "by_priority": {
+    "P3": 2,
+    "P2": 4,
+    "P1": 2
+  },
+  "by_status": {
+    "READY_FOR_HUMAN_CHECK": 2,
+    "REVIEW_MISSING_PO": 1,
+    "HOLD_DUPLICATE": 1,
+    "REVIEW_MANAGER": 1,
+    "REVIEW_PO_ALREADY_INVOICED": 1,
+    "REVIEW_UNKNOWN_PO": 1,
+    "HOLD_BANK_CHANGE": 1
+  },
+  "payment_authorized": false,
+  "cases": [
+    {
+      "case_id": "AP-20261025-INV201-02418",
+      "invoice_id": "INV-201",
+      "status": "READY_FOR_HUMAN_CHECK",
+      "priority": "P3",
+      "control_flags": "NONE",
+      "manager_approval_required": false,
+      "reason": "All V4 controls passed; human confirmation still required"
+    },
+    {
+      "case_id": "AP-20261025-INV202-02419",
+      "invoice_id": "INV-202",
+      "status": "READY_FOR_HUMAN_CHECK",
+      "priority": "P3",
+      "control_flags": "NONE",
+      "manager_approval_required": false,
+      "reason": "All V4 controls passed; human confirmation still required"
+    },
+    {
+      "case_id": "AP-20261025-INV203-02420",
+      "invoice_id": "INV-203",
+      "status": "REVIEW_MISSING_PO",
+      "priority": "P2",
+      "control_flags": "MISSING_PO|HIGH_VALUE",
+      "manager_approval_required": true,
+      "reason": "Purchase order missing; finance-manager approval also required"
+    },
+    {
+      "case_id": "AP-20261025-INV204-02421",
+      "invoice_id": "INV-204",
+      "status": "HOLD_DUPLICATE",
+      "priority": "P1",
+      "control_flags": "DUPLICATE",
+      "manager_approval_required": false,
+      "reason": "Supplier and reference already in the historic posted-invoice fixture"
+    },
+    {
+      "case_id": "AP-20261025-INV205-02422",
+      "invoice_id": "INV-205",
+      "status": "REVIEW_MANAGER",
+      "priority": "P2",
+      "control_flags": "HIGH_VALUE",
+      "manager_approval_required": true,
+      "reason": "Finance-manager approval required (amount > $10,000)"
+    },
+    {
+      "case_id": "AP-20261025-INV206-02423",
+      "invoice_id": "INV-206",
+      "status": "REVIEW_PO_ALREADY_INVOICED",
+      "priority": "P2",
+      "control_flags": "PO_ALREADY_INVOICED|SPLIT_SUSPECTED",
+      "manager_approval_required": true,
+      "reason": "PO-502 has already been invoiced under another reference (possible re-billing); finance-manager approval also required"
+    },
+    {
+      "case_id": "AP-20261025-INV207-02424",
+      "invoice_id": "INV-207",
+      "status": "REVIEW_UNKNOWN_PO",
+      "priority": "P2",
+      "control_flags": "UNKNOWN_PO",
+      "manager_approval_required": false,
+      "reason": "PO-999 is not in the PO master table"
+    },
+    {
+      "case_id": "AP-20261025-INV208-02425",
+      "invoice_id": "INV-208",
+      "status": "HOLD_BANK_CHANGE",
+      "priority": "P1",
+      "control_flags": "BANK_CHANGE",
+      "manager_approval_required": false,
+      "reason": "Bank details changed; call the supplier on a known number before paying"
+    }
+  ]
+}

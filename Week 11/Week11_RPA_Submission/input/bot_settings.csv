@@ -1,0 +1,4 @@
+setting,value,meaning
+dod_alert_pct,0.5,Alert when SGD per unit moves this many percent day-on-day
+avg_alert_pct,2.0,Alert when today is this many percent away from the 1-month average
+history_days,22,ECB fixings treated as one month (about 22 business days)

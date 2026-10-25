@@ -1,0 +1,203 @@
+{
+  "id": "23",
+  "mode": "integrated",
+  "status": "success",
+  "startedAt": "2026-10-25T17:58:46.384Z",
+  "stoppedAt": "2026-10-25T17:58:47.150Z",
+  "workflowId": "Ag1NCqaexHYo4AyL",
+  "workflow": "Week10 V4 | sub | Alerts + Gemini explanation",
+  "nodes": [
+    {
+      "node": "When called with classified cases",
+      "status": "success",
+      "items_out": 1,
+      "ms": 0,
+      "error": null
+    },
+    {
+      "node": "Route by priority",
+      "status": "success",
+      "items_out": 1,
+      "ms": 4,
+      "error": null
+    },
+    {
+      "node": "Telegram: urgent HOLD alert",
+      "status": "success",
+      "items_out": 1,
+      "ms": 710,
+      "error": null
+    }
+  ],
+  "runData": {
+    "When called with classified cases": [
+      {
+        "startTime": 1792951126436,
+        "executionIndex": 0,
+        "source": [],
+        "hints": [],
+        "executionTime": 0,
+        "metadata": {
+          "parentExecution": {
+            "executionId": "21",
+            "workflowId": "bwZ1w6LRe5FcI9Rw",
+            "shouldResume": false,
+            "executionContext": {
+              "version": 1,
+              "establishedAt": 1792951125997,
+              "source": "webhook",
+              "triggerNode": {
+                "name": "AP intake form",
+                "type": "n8n-nodes-base.formTrigger"
+              },
+              "redaction": {
+                "version": 2,
+                "production": false,
+                "manual": false
+              }
+            }
+          }
+        },
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV201B-26166",
+                  "channel": "form",
+                  "priority": "P1",
+                  "team_id": "T02",
+                  "invoice_id": "INV-201B",
+                  "supplier": "ALPHA",
+                  "invoice_ref": "A-777",
+                  "amount_usd": 1250,
+                  "po_id": "PO-501",
+                  "bank_changed": "NO",
+                  "status": "HOLD_DUPLICATE",
+                  "reason": "Supplier and reference already submitted (found in AP ledger table or earlier in this batch)",
+                  "control_flags": "DUPLICATE",
+                  "received_at": "2026-10-25T17:58:46.166Z",
+                  "manager_approval_required": false,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "",
+                  "ai_guardrail": "NOT_REQUIRED",
+                  "telegram_text": "MERIDIAN AP V4 | 🔴 HOLD\nCase: AP-20261025-INV201B-26166\nInvoice: INV-201B (form)\nSupplier: ALPHA  Ref: A-777\nAmount: $1250.00  PO: PO-501\nStatus: HOLD_DUPLICATE\nFlags: DUPLICATE\nReason: Supplier and reference already submitted (found in AP ledger table or earlier in this batch)\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "ledger_row_id": 11
+                },
+                "index": 0,
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Route by priority": [
+      {
+        "startTime": 1792951126436,
+        "executionIndex": 1,
+        "source": [
+          {
+            "previousNode": "When called with classified cases",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 4,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV201B-26166",
+                  "channel": "form",
+                  "priority": "P1",
+                  "team_id": "T02",
+                  "invoice_id": "INV-201B",
+                  "supplier": "ALPHA",
+                  "invoice_ref": "A-777",
+                  "amount_usd": 1250,
+                  "po_id": "PO-501",
+                  "bank_changed": "NO",
+                  "status": "HOLD_DUPLICATE",
+                  "reason": "Supplier and reference already submitted (found in AP ledger table or earlier in this batch)",
+                  "control_flags": "DUPLICATE",
+                  "received_at": "2026-10-25T17:58:46.166Z",
+                  "manager_approval_required": false,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "",
+                  "ai_guardrail": "NOT_REQUIRED",
+                  "telegram_text": "MERIDIAN AP V4 | 🔴 HOLD\nCase: AP-20261025-INV201B-26166\nInvoice: INV-201B (form)\nSupplier: ALPHA  Ref: A-777\nAmount: $1250.00  PO: PO-501\nStatus: HOLD_DUPLICATE\nFlags: DUPLICATE\nReason: Supplier and reference already submitted (found in AP ledger table or earlier in this batch)\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "ledger_row_id": 11
+                },
+                "index": 0,
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ],
+            [],
+            []
+          ]
+        }
+      }
+    ],
+    "Telegram: urgent HOLD alert": [
+      {
+        "startTime": 1792951126440,
+        "executionIndex": 2,
+        "source": [
+          {
+            "previousNode": "Route by priority",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 710,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "ok": true,
+                  "result": {
+                    "message_id": 48,
+                    "from": {
+                      "id": 8873365814,
+                      "is_bot": true,
+                      "first_name": "BC3415_Smishing_Triage",
+                      "username": "bc3415_smishing_bot"
+                    },
+                    "chat": {
+                      "id": "<redacted>",
+                      "first_name": "<redacted>",
+                      "last_name": "<redacted>",
+                      "username": "<redacted>",
+                      "type": "private"
+                    },
+                    "date": 1792951126,
+                    "text": "MERIDIAN AP V4 | 🔴 HOLD\nCase: AP-20261025-INV201B-26166\nInvoice: INV-201B (form)\nSupplier: ALPHA  Ref: A-777\nAmount: $1250.00  PO: PO-501\nStatus: HOLD_DUPLICATE\nFlags: DUPLICATE\nReason: Supplier and reference already submitted (found in AP ledger table or earlier in this batch)\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE."
+                  }
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "team_id": "T01",
+  "invoices": [
+    {"invoice_id": "INV-201", "supplier": "ALPHA",   "invoice_ref": "A-777", "amount_usd": 1250,  "po_id": "PO-501", "bank_changed": "NO"},
+    {"invoice_id": "INV-202", "supplier": "BETA",    "invoice_ref": "B-431", "amount_usd": 8950,  "po_id": "PO-502", "bank_changed": "NO"},
+    {"invoice_id": "INV-203", "supplier": "GAMMA",   "invoice_ref": "G-211", "amount_usd": 14800, "po_id": "",       "bank_changed": "NO"},
+    {"invoice_id": "INV-204", "supplier": "ALPHA",   "invoice_ref": "A-776", "amount_usd": 1250,  "po_id": "PO-501", "bank_changed": "NO"},
+    {"invoice_id": "INV-205", "supplier": "DELTA",   "invoice_ref": "D-555", "amount_usd": 24600, "po_id": "PO-505", "bank_changed": "NO"},
+    {"invoice_id": "INV-206", "supplier": "BETA",    "invoice_ref": "B-432", "amount_usd": 9150,  "po_id": "PO-502", "bank_changed": "NO"},
+    {"invoice_id": "INV-207", "supplier": "EPSILON", "invoice_ref": "E-007", "amount_usd": 500,   "po_id": "PO-999", "bank_changed": "NO"},
+    {"invoice_id": "INV-208", "supplier": "GAMMA",   "invoice_ref": "G-323", "amount_usd": 4700,  "po_id": "PO-503", "bank_changed": "YES"}
+  ]
+}

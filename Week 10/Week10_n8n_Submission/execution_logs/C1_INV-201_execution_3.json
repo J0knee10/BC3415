@@ -1,0 +1,214 @@
+{
+  "id": "3",
+  "mode": "webhook",
+  "status": "success",
+  "startedAt": "2026-10-25T17:48:12.920Z",
+  "stoppedAt": "2026-10-25T17:48:13.838Z",
+  "workflowId": "BM7aPdLJUJ8eGfGC",
+  "workflow": "Week10 V3 | C - Invoice rules to Data Table to Telegram",
+  "nodes": [
+    {
+      "node": "On form submission",
+      "status": "success",
+      "items_out": 1,
+      "ms": 0,
+      "error": null
+    },
+    {
+      "node": "Classify invoice",
+      "status": "success",
+      "items_out": 1,
+      "ms": 7,
+      "error": null
+    },
+    {
+      "node": "Save to Data Table",
+      "status": "success",
+      "items_out": 1,
+      "ms": 61,
+      "error": null
+    },
+    {
+      "node": "Send Telegram notification",
+      "status": "success",
+      "items_out": 1,
+      "ms": 801,
+      "error": null
+    }
+  ],
+  "runData": {
+    "On form submission": [
+      {
+        "startTime": 1792950492969,
+        "executionIndex": 0,
+        "source": [],
+        "hints": [],
+        "executionTime": 0,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "team_id": "T01",
+                  "invoice_id": "INV-201",
+                  "supplier": "ALPHA",
+                  "invoice_ref": "A-777",
+                  "amount_usd": 1250,
+                  "po_id": "PO-501",
+                  "bank_changed": "NO",
+                  "submittedAt": "2026-10-26T01:48:12.887+08:00",
+                  "formMode": "production"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Classify invoice": [
+      {
+        "startTime": 1792950492969,
+        "executionIndex": 1,
+        "source": [
+          {
+            "previousNode": "On form submission",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 7,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "team_id": "T01",
+                  "invoice_id": "INV-201",
+                  "supplier": "ALPHA",
+                  "invoice_ref": "A-777",
+                  "amount_usd": 1250,
+                  "po_id": "PO-501",
+                  "bank_changed": "NO",
+                  "status": "READY_FOR_HUMAN_CHECK",
+                  "reason": "Rules passed; human confirmation still required",
+                  "control_flags": "NONE",
+                  "received_at": "2026-10-25T17:48:12.975Z",
+                  "manager_approval_required": false,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "telegram_text": "MERIDIAN | SIMULATED INVOICE TRIAGE\nTeam: T01\nInvoice: INV-201\nSupplier: ALPHA\nAmount: $1250.00\nStatus: READY_FOR_HUMAN_CHECK\nFlags: NONE\nReason: Rules passed; human confirmation still required\nHUMAN REVIEW REQUIRED. NO PAYMENT."
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Save to Data Table": [
+      {
+        "startTime": 1792950492976,
+        "executionIndex": 2,
+        "source": [
+          {
+            "previousNode": "Classify invoice",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 61,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "team_id": "T01",
+                  "invoice_id": "INV-201",
+                  "supplier": "ALPHA",
+                  "invoice_ref": "A-777",
+                  "amount_usd": 1250,
+                  "po_id": "PO-501",
+                  "bank_changed": "NO",
+                  "status": "READY_FOR_HUMAN_CHECK",
+                  "reason": "Rules passed; human confirmation still required",
+                  "control_flags": "NONE",
+                  "received_at": "2026-10-25T17:48:12.975Z",
+                  "manager_approval_required": false,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "telegram_text": "MERIDIAN | SIMULATED INVOICE TRIAGE\nTeam: T01\nInvoice: INV-201\nSupplier: ALPHA\nAmount: $1250.00\nStatus: READY_FOR_HUMAN_CHECK\nFlags: NONE\nReason: Rules passed; human confirmation still required\nHUMAN REVIEW REQUIRED. NO PAYMENT.",
+                  "id": 1,
+                  "createdAt": "2026-10-25T17:48:12.981Z",
+                  "updatedAt": "2026-10-25T17:48:12.981Z"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Send Telegram notification": [
+      {
+        "startTime": 1792950493037,
+        "executionIndex": 3,
+        "source": [
+          {
+            "previousNode": "Save to Data Table",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 801,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "ok": true,
+                  "result": {
+                    "message_id": 36,
+                    "from": {
+                      "id": 8873365814,
+                      "is_bot": true,
+                      "first_name": "BC3415_Smishing_Triage",
+                      "username": "bc3415_smishing_bot"
+                    },
+                    "chat": {
+                      "id": "<redacted>",
+                      "first_name": "<redacted>",
+                      "last_name": "<redacted>",
+                      "username": "<redacted>",
+                      "type": "private"
+                    },
+                    "date": 1792950493,
+                    "text": "MERIDIAN | SIMULATED INVOICE TRIAGE\nTeam: T01\nInvoice: INV-201\nSupplier: ALPHA\nAmount: $1250.00\nStatus: READY_FOR_HUMAN_CHECK\nFlags: NONE\nReason: Rules passed; human confirmation still required\nHUMAN REVIEW REQUIRED. NO PAYMENT."
+                  }
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ]
+  }
+}

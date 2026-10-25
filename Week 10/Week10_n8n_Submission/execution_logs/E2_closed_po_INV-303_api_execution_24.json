@@ -1,0 +1,350 @@
+{
+  "id": "24",
+  "mode": "webhook",
+  "status": "success",
+  "startedAt": "2026-10-25T17:58:50.417Z",
+  "stoppedAt": "2026-10-25T17:58:50.800Z",
+  "workflowId": "L6IdCAmZHvmdEaTy",
+  "workflow": "Week10 V4 | E2 - Batch invoice API",
+  "nodes": [
+    {
+      "node": "POST /webhook/meridian-ap-v4/batch",
+      "status": "success",
+      "items_out": 1,
+      "ms": 0,
+      "error": null
+    },
+    {
+      "node": "Split batch into invoices",
+      "status": "success",
+      "items_out": 1,
+      "ms": 4,
+      "error": null
+    },
+    {
+      "node": "Run V4 core (rules + ledger)",
+      "status": "success",
+      "items_out": 1,
+      "ms": 216,
+      "error": null
+    },
+    {
+      "node": "Start alerts (no wait)",
+      "status": "success",
+      "items_out": 1,
+      "ms": 111,
+      "error": null
+    },
+    {
+      "node": "Build API response",
+      "status": "success",
+      "items_out": 1,
+      "ms": 5,
+      "error": null
+    },
+    {
+      "node": "Respond to caller",
+      "status": "success",
+      "items_out": 1,
+      "ms": 1,
+      "error": null
+    }
+  ],
+  "runData": {
+    "POST /webhook/meridian-ap-v4/batch": [
+      {
+        "startTime": 1792951130462,
+        "executionIndex": 0,
+        "source": [],
+        "hints": [],
+        "executionTime": 0,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "headers": {
+                    "host": "localhost:5678",
+                    "user-agent": "python-requests/2.34.2",
+                    "accept-encoding": "gzip, deflate",
+                    "accept": "*/*",
+                    "connection": "keep-alive",
+                    "content-length": "146",
+                    "content-type": "application/json"
+                  },
+                  "params": {},
+                  "query": {},
+                  "body": {
+                    "team_id": "T03",
+                    "invoice_id": "INV-303",
+                    "supplier": "ZETA",
+                    "invoice_ref": "Z-1",
+                    "amount_usd": 3200,
+                    "po_id": "PO-508",
+                    "bank_changed": "NO"
+                  },
+                  "webhookUrl": "http://localhost:5678/webhook/meridian-ap-v4/batch",
+                  "executionMode": "production"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Split batch into invoices": [
+      {
+        "startTime": 1792951130462,
+        "executionIndex": 1,
+        "source": [
+          {
+            "previousNode": "POST /webhook/meridian-ap-v4/batch",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 4,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "team_id": "T03",
+                  "invoice_id": "INV-303",
+                  "supplier": "ZETA",
+                  "invoice_ref": "Z-1",
+                  "amount_usd": 3200,
+                  "po_id": "PO-508",
+                  "bank_changed": "NO",
+                  "channel": "api"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Run V4 core (rules + ledger)": [
+      {
+        "startTime": 1792951130466,
+        "executionIndex": 2,
+        "source": [
+          {
+            "previousNode": "Split batch into invoices",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 216,
+        "metadata": {
+          "subExecution": {
+            "executionId": "25",
+            "workflowId": "PRhnmZYZUp9VXpvb"
+          },
+          "subExecutionsCount": 1
+        },
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV303-30550",
+                  "channel": "api",
+                  "priority": "P2",
+                  "team_id": "T03",
+                  "invoice_id": "INV-303",
+                  "supplier": "ZETA",
+                  "invoice_ref": "Z-1",
+                  "amount_usd": 3200,
+                  "po_id": "PO-508",
+                  "bank_changed": "NO",
+                  "status": "REVIEW_PO_CLOSED",
+                  "reason": "PO-508 is CLOSED, not OPEN",
+                  "control_flags": "PO_CLOSED",
+                  "received_at": "2026-10-25T17:58:50.550Z",
+                  "manager_approval_required": false,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "",
+                  "ai_guardrail": "PENDING",
+                  "telegram_text": "MERIDIAN AP V4 | 🟠 REVIEW\nCase: AP-20261025-INV303-30550\nInvoice: INV-303 (api)\nSupplier: ZETA  Ref: Z-1\nAmount: $3200.00  PO: PO-508\nStatus: REVIEW_PO_CLOSED\nFlags: PO_CLOSED\nReason: PO-508 is CLOSED, not OPEN\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "ledger_row_id": 12
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Start alerts (no wait)": [
+      {
+        "startTime": 1792951130682,
+        "executionIndex": 3,
+        "source": [
+          {
+            "previousNode": "Run V4 core (rules + ledger)",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 111,
+        "metadata": {
+          "subExecution": {
+            "executionId": "26",
+            "workflowId": "Ag1NCqaexHYo4AyL"
+          },
+          "subExecutionsCount": 1
+        },
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV303-30550",
+                  "channel": "api",
+                  "priority": "P2",
+                  "team_id": "T03",
+                  "invoice_id": "INV-303",
+                  "supplier": "ZETA",
+                  "invoice_ref": "Z-1",
+                  "amount_usd": 3200,
+                  "po_id": "PO-508",
+                  "bank_changed": "NO",
+                  "status": "REVIEW_PO_CLOSED",
+                  "reason": "PO-508 is CLOSED, not OPEN",
+                  "control_flags": "PO_CLOSED",
+                  "received_at": "2026-10-25T17:58:50.550Z",
+                  "manager_approval_required": false,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "",
+                  "ai_guardrail": "PENDING",
+                  "telegram_text": "MERIDIAN AP V4 | 🟠 REVIEW\nCase: AP-20261025-INV303-30550\nInvoice: INV-303 (api)\nSupplier: ZETA  Ref: Z-1\nAmount: $3200.00  PO: PO-508\nStatus: REVIEW_PO_CLOSED\nFlags: PO_CLOSED\nReason: PO-508 is CLOSED, not OPEN\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "ledger_row_id": 12
+                },
+                "index": 0,
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Build API response": [
+      {
+        "startTime": 1792951130793,
+        "executionIndex": 4,
+        "source": [
+          {
+            "previousNode": "Start alerts (no wait)",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 5,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "received": 1,
+                  "by_priority": {
+                    "P2": 1
+                  },
+                  "by_status": {
+                    "REVIEW_PO_CLOSED": 1
+                  },
+                  "payment_authorized": false,
+                  "cases": [
+                    {
+                      "case_id": "AP-20261025-INV303-30550",
+                      "invoice_id": "INV-303",
+                      "status": "REVIEW_PO_CLOSED",
+                      "priority": "P2",
+                      "control_flags": "PO_CLOSED",
+                      "manager_approval_required": false,
+                      "reason": "PO-508 is CLOSED, not OPEN"
+                    }
+                  ]
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Respond to caller": [
+      {
+        "startTime": 1792951130798,
+        "executionIndex": 5,
+        "source": [
+          {
+            "previousNode": "Build API response",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 1,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "received": 1,
+                  "by_priority": {
+                    "P2": 1
+                  },
+                  "by_status": {
+                    "REVIEW_PO_CLOSED": 1
+                  },
+                  "payment_authorized": false,
+                  "cases": [
+                    {
+                      "case_id": "AP-20261025-INV303-30550",
+                      "invoice_id": "INV-303",
+                      "status": "REVIEW_PO_CLOSED",
+                      "priority": "P2",
+                      "control_flags": "PO_CLOSED",
+                      "manager_approval_required": false,
+                      "reason": "PO-508 is CLOSED, not OPEN"
+                    }
+                  ]
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ]
+  }
+}

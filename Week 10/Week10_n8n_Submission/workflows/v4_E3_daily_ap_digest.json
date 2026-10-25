@@ -1,0 +1,230 @@
+{
+  "name": "Week10 V4 | E3 - Daily AP exception digest",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 30 8 * * 1-5"
+            }
+          ]
+        }
+      },
+      "id": "00000000-0000-4000-8000-000000000033",
+      "name": "Every weekday 08:30 SGT",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        200
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "00000000-0000-4000-8000-000000000034",
+      "name": "Run digest now (manual)",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "Week10_AP_Ledger_V4",
+          "cachedResultName": "Week10_AP_Ledger_V4"
+        },
+        "returnAll": true
+      },
+      "id": "00000000-0000-4000-8000-000000000035",
+      "name": "Load AP ledger",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        260,
+        300
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Deterministic numbers for the last 24 hours. The model only rewords these facts.\nconst since = Date.now() - 24 * 3600 * 1000;\nconst rows = $input.all().map(i => i.json).filter(r => r.case_id && new Date(r.received_at).getTime() >= since);\nconst count = (k) => rows.reduce((m, r) => (m[r[k]] = (m[r[k]] || 0) + 1, m), {});\nconst sum = (f) => rows.filter(f).reduce((s, r) => s + (Number(r.amount_usd) || 0), 0);\nconst p1 = rows.filter(r => r.priority === 'P1');\nconst facts = {\n  window: 'last 24 hours', cases: rows.length, by_priority: count('priority'), by_status: count('status'),\n  on_hold_usd: Math.round(sum(r => r.priority === 'P1') * 100) / 100,\n  needs_manager_usd: Math.round(sum(r => r.manager_approval_required) * 100) / 100,\n  ai_notes_blocked: rows.filter(r => r.ai_guardrail === 'BLOCKED').length,\n  holds: p1.map(r => `${r.invoice_id} ${r.supplier} $${r.amount_usd} ${r.status}`),\n};\nconst header = `MERIDIAN AP V4 | DAILY DIGEST\\nCases: ${facts.cases} | P1 ${facts.by_priority.P1 || 0} / P2 ${facts.by_priority.P2 || 0} / P3 ${facts.by_priority.P3 || 0}\\n` +\n  `On hold: $${facts.on_hold_usd.toFixed(2)} | Needs manager: $${facts.needs_manager_usd.toFixed(2)}\\n` +\n  `By status: ${Object.entries(facts.by_status).map(([k, v]) => k + ' ' + v).join(', ') || 'none'}`;\nreturn [{ json: { facts, facts_text: JSON.stringify(facts), header } }];"
+      },
+      "id": "00000000-0000-4000-8000-000000000036",
+      "name": "Summarise last 24 hours",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ \"You brief a finance manager. Using ONLY these facts (JSON), write 3 short bullet points: what needs action first, total value on hold, and anything unusual. Do not invent numbers, do not say anything was approved or paid.\\n\\nFacts: \" + $json.facts_text }}"
+      },
+      "id": "00000000-0000-4000-8000-000000000037",
+      "name": "Gemini: manager briefing",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        740,
+        300
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-lite-latest",
+        "options": {
+          "temperature": 0.1
+        }
+      },
+      "id": "00000000-0000-4000-8000-000000000038",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        740,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Guardrail for the briefing: every number the model writes must exist in the facts,\n// and it may not claim anything was approved or paid. Otherwise send the numbers alone.\nconst f = $('Summarise last 24 hours').first().json;\nconst raw = String($input.first().json.text ?? '').trim();\nconst allowed = new Set((f.facts_text.match(/\\d+(?:\\.\\d+)?/g) || []).map(n => String(Number(n))));\nconst used = (raw.replace(/,/g, '').match(/\\d+(?:\\.\\d+)?/g) || []).map(n => String(Number(n)));\nconst invented = used.filter(n => !allowed.has(n) && !['1','2','3','24'].includes(n));\nconst unsafe = /(approved for payment|has been paid|were paid|payments? (made|sent|released))/i.test(raw);\nconst ok = raw && !invented.length && !unsafe;\nconst note = ok ? raw : `[AI briefing withheld: ${!raw ? 'empty' : unsafe ? 'payment claim' : 'numbers not in the data: ' + invented.join(', ')}]`;\nreturn [{ json: { ...f, ai_briefing: note, ai_guardrail: ok ? 'PASSED' : 'BLOCKED',\n  telegram_text: `${f.header}\\n\\n${note}\\n\\n(Advisory summary. Statuses come from the rules; nothing is approved or paid.)` } }];"
+      },
+      "id": "00000000-0000-4000-8000-000000000039",
+      "name": "Guardrail: numbers must come from the data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        980,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "={{ $json.telegram_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "None"
+        }
+      },
+      "id": "00000000-0000-4000-8000-000000000040",
+      "name": "Telegram: send digest",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1220,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Every weekday 08:30 SGT": {
+      "main": [
+        [
+          {
+            "node": "Load AP ledger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run digest now (manual)": {
+      "main": [
+        [
+          {
+            "node": "Load AP ledger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load AP ledger": {
+      "main": [
+        [
+          {
+            "node": "Summarise last 24 hours",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarise last 24 hours": {
+      "main": [
+        [
+          {
+            "node": "Gemini: manager briefing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini: manager briefing": {
+      "main": [
+        [
+          {
+            "node": "Guardrail: numbers must come from the data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardrail: numbers must come from the data": {
+      "main": [
+        [
+          {
+            "node": "Telegram: send digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Gemini: manager briefing",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Singapore",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

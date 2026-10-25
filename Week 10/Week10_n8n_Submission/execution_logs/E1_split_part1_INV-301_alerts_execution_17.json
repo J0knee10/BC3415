@@ -1,0 +1,207 @@
+{
+  "id": "17",
+  "mode": "integrated",
+  "status": "success",
+  "startedAt": "2026-10-25T17:58:34.818Z",
+  "stoppedAt": "2026-10-25T17:58:34.870Z",
+  "workflowId": "Ag1NCqaexHYo4AyL",
+  "workflow": "Week10 V4 | sub | Alerts + Gemini explanation",
+  "nodes": [
+    {
+      "node": "When called with classified cases",
+      "status": "success",
+      "items_out": 1,
+      "ms": 0,
+      "error": null
+    },
+    {
+      "node": "Route by priority",
+      "status": "success",
+      "items_out": 1,
+      "ms": 5,
+      "error": null
+    },
+    {
+      "node": "P3: logged only (goes in daily digest)",
+      "status": "success",
+      "items_out": 1,
+      "ms": 0,
+      "error": null
+    }
+  ],
+  "runData": {
+    "When called with classified cases": [
+      {
+        "startTime": 1792951114864,
+        "executionIndex": 0,
+        "source": [],
+        "hints": [],
+        "executionTime": 0,
+        "metadata": {
+          "parentExecution": {
+            "executionId": "15",
+            "workflowId": "bwZ1w6LRe5FcI9Rw",
+            "shouldResume": false,
+            "executionContext": {
+              "version": 1,
+              "establishedAt": 1792951114435,
+              "source": "webhook",
+              "triggerNode": {
+                "name": "AP intake form",
+                "type": "n8n-nodes-base.formTrigger"
+              },
+              "redaction": {
+                "version": 2,
+                "production": false,
+                "manual": false
+              }
+            }
+          }
+        },
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV301-14618",
+                  "channel": "form",
+                  "priority": "P3",
+                  "team_id": "T01",
+                  "invoice_id": "INV-301",
+                  "supplier": "EPSILON",
+                  "invoice_ref": "E-101",
+                  "amount_usd": 6000,
+                  "po_id": "PO-506",
+                  "bank_changed": "NO",
+                  "status": "READY_FOR_HUMAN_CHECK",
+                  "reason": "All V4 controls passed; human confirmation still required",
+                  "control_flags": "NONE",
+                  "received_at": "2026-10-25T17:58:34.618Z",
+                  "manager_approval_required": false,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "",
+                  "ai_guardrail": "NOT_REQUIRED",
+                  "telegram_text": "MERIDIAN AP V4 | 🟢 READY\nCase: AP-20261025-INV301-14618\nInvoice: INV-301 (form)\nSupplier: EPSILON  Ref: E-101\nAmount: $6000.00  PO: PO-506\nStatus: READY_FOR_HUMAN_CHECK\nFlags: NONE\nReason: All V4 controls passed; human confirmation still required\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "ledger_row_id": 9
+                },
+                "index": 0,
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Route by priority": [
+      {
+        "startTime": 1792951114864,
+        "executionIndex": 1,
+        "source": [
+          {
+            "previousNode": "When called with classified cases",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 5,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [],
+            [],
+            [
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV301-14618",
+                  "channel": "form",
+                  "priority": "P3",
+                  "team_id": "T01",
+                  "invoice_id": "INV-301",
+                  "supplier": "EPSILON",
+                  "invoice_ref": "E-101",
+                  "amount_usd": 6000,
+                  "po_id": "PO-506",
+                  "bank_changed": "NO",
+                  "status": "READY_FOR_HUMAN_CHECK",
+                  "reason": "All V4 controls passed; human confirmation still required",
+                  "control_flags": "NONE",
+                  "received_at": "2026-10-25T17:58:34.618Z",
+                  "manager_approval_required": false,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "",
+                  "ai_guardrail": "NOT_REQUIRED",
+                  "telegram_text": "MERIDIAN AP V4 | 🟢 READY\nCase: AP-20261025-INV301-14618\nInvoice: INV-301 (form)\nSupplier: EPSILON  Ref: E-101\nAmount: $6000.00  PO: PO-506\nStatus: READY_FOR_HUMAN_CHECK\nFlags: NONE\nReason: All V4 controls passed; human confirmation still required\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "ledger_row_id": 9
+                },
+                "index": 0,
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "P3: logged only (goes in daily digest)": [
+      {
+        "startTime": 1792951114870,
+        "executionIndex": 2,
+        "source": [
+          {
+            "previousNode": "Route by priority",
+            "previousNodeOutput": 2,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 0,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV301-14618",
+                  "channel": "form",
+                  "priority": "P3",
+                  "team_id": "T01",
+                  "invoice_id": "INV-301",
+                  "supplier": "EPSILON",
+                  "invoice_ref": "E-101",
+                  "amount_usd": 6000,
+                  "po_id": "PO-506",
+                  "bank_changed": "NO",
+                  "status": "READY_FOR_HUMAN_CHECK",
+                  "reason": "All V4 controls passed; human confirmation still required",
+                  "control_flags": "NONE",
+                  "received_at": "2026-10-25T17:58:34.618Z",
+                  "manager_approval_required": false,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "",
+                  "ai_guardrail": "NOT_REQUIRED",
+                  "telegram_text": "MERIDIAN AP V4 | 🟢 READY\nCase: AP-20261025-INV301-14618\nInvoice: INV-301 (form)\nSupplier: EPSILON  Ref: E-101\nAmount: $6000.00  PO: PO-506\nStatus: READY_FOR_HUMAN_CHECK\nFlags: NONE\nReason: All V4 controls passed; human confirmation still required\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "ledger_row_id": 9
+                },
+                "index": 0,
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ]
+  }
+}

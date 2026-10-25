@@ -1,0 +1,102 @@
+{
+  "name": "Week10 V3 | A - Offline deterministic check",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "02370c35-e1d3-4ee7-a1d6-cd918971d0c7",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        120,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Eight synthetic cases. This requires no services, secrets or credentials.\nconst rows=[\n ['INV-201','ALPHA','A-777',1250,'PO-501','NO'],\n ['INV-202','BETA','B-431',8950,'PO-502','NO'],\n ['INV-203','GAMMA','G-211',14800,'','NO'],\n ['INV-204','ALPHA','A-776',1250,'PO-501','NO'],\n ['INV-205','DELTA','D-555',24600,'PO-505','NO'],\n ['INV-206','BETA','B-432',9150,'PO-502','NO'],\n ['INV-207','EPSILON','E-007',500,'PO-999','NO'],\n ['INV-208','GAMMA','G-323',4700,'PO-503','YES']\n];\nreturn rows.map(r=>({json:{team_id:'INSTRUCTOR',invoice_id:r[0],supplier:r[1],invoice_ref:r[2],amount_usd:r[3],po_id:r[4],bank_changed:r[5]}}));",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "03d670db-28a0-4299-8208-220aaadddb7d",
+      "name": "Load 8 synthetic invoices",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        380,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Week 10 V3. Run Once for All Items. SYNTHETIC FINANCE POLICY ONLY.\n// Rules are deterministic. Gemini may explain, never change status or pay.\n// Teaching limits: PO master and historic ledger below are fixtures, NOT live table lookups.\nconst poMaster = {\n  'PO-501': {supplier:'ALPHA',amount:1250},\n  'PO-502': {supplier:'BETA',amount:8950},\n  'PO-503': {supplier:'GAMMA',amount:4700},\n  'PO-505': {supplier:'DELTA',amount:24600},\n};\nconst posted = new Set(['ALPHA|A-776']); // historical fixture; does not grow automatically\nreturn $input.all().map(item => {\n  const d=item.json;\n  const team_id=String(d.team_id ?? '').trim().slice(0,20);\n  const invoice_id=String(d.invoice_id ?? '').trim().toUpperCase().slice(0,60);\n  const supplier=String(d.supplier ?? '').trim().toUpperCase().slice(0,60);\n  const invoice_ref=String(d.invoice_ref ?? '').trim().toUpperCase().slice(0,60);\n  const po_id=String(d.po_id ?? '').trim().toUpperCase().slice(0,60);\n  const raw=String(d.amount_usd ?? '').trim();\n  const amount=raw!=='' ? Number(raw) : NaN;\n  const bank_changed=['YES','TRUE','1'].includes(String(d.bank_changed ?? 'NO').trim().toUpperCase());\n  const manager_approval_required=Number.isFinite(amount) && amount>10000;\n  const flags=[];\n  let status='READY_FOR_HUMAN_CHECK', primary='Rules passed; human confirmation still required';\n  if(!invoice_id||!supplier||!invoice_ref||!Number.isFinite(amount)||amount<=0||amount>=10000000){\n    status='HOLD_INVALID_DATA';primary='Required field missing or invalid amount'; flags.push('INVALID_DATA');\n  } else if(posted.has(`${supplier}|${invoice_ref}`)){\n    status='HOLD_DUPLICATE';primary='Supplier and reference already in synthetic historic ledger';flags.push('HISTORIC_DUPLICATE');\n  } else if(bank_changed){\n    status='HOLD_BANK_CHANGE';primary='Bank details changed; independent verification required';flags.push('BANK_CHANGE');\n  } else if(!po_id){\n    status='REVIEW_MISSING_PO';primary='Purchase order missing';flags.push('MISSING_PO');\n  } else if(!poMaster[po_id]){\n    status='REVIEW_UNKNOWN_PO';primary='PO ID not in the approved synthetic PO master';flags.push('UNKNOWN_PO');\n  } else if(poMaster[po_id].supplier!==supplier){\n    status='REVIEW_PO_SUPPLIER';primary='Supplier does not match the PO master';flags.push('PO_SUPPLIER_MISMATCH');\n  } else if(Math.abs(poMaster[po_id].amount-amount)>0.01){\n    status='REVIEW_AMOUNT_MISMATCH';primary=`PO amount is $${poMaster[po_id].amount.toFixed(2)}, not the invoice amount`;flags.push('AMOUNT_MISMATCH');\n  } else if(manager_approval_required){\n    status='REVIEW_MANAGER';primary='Finance-manager approval required (amount > $10,000)';flags.push('HIGH_VALUE');\n  }\n  if(manager_approval_required&&!flags.includes('HIGH_VALUE')) flags.push('HIGH_VALUE');\n  const reason=primary + (manager_approval_required && status!=='REVIEW_MANAGER' ? '; finance-manager approval also required (>$10,000)' : '');\n  const control_flags=flags.join('|') || 'NONE';\n  const telegram_text=`MERIDIAN | SIMULATED INVOICE TRIAGE\\nTeam: ${team_id}\\nInvoice: ${invoice_id}\\nSupplier: ${supplier}\\nAmount: $${Number.isFinite(amount)?amount.toFixed(2):'INVALID'}\\nStatus: ${status}\\nFlags: ${control_flags}\\nReason: ${reason}\\nHUMAN REVIEW REQUIRED. NO PAYMENT.`;\n  return {json:{\n    team_id,invoice_id,supplier,invoice_ref,\n    amount_usd:Number.isFinite(amount)?amount:null,po_id,bank_changed:bank_changed?'YES':'NO',\n    status,reason,control_flags,received_at:new Date().toISOString(),\n    manager_approval_required,human_approval_required:true,payment_authorized:false,\n    ai_can_override_status:false,telegram_text\n  }};\n});",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "44e2cc12-1a51-4d64-861a-e933fbebb440",
+      "name": "Classify invoice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Summarize each deterministic classification; a zero-integration classroom fallback.\nconst records=$input.all().map(i=>i.json);\nconst summary=Object.fromEntries([...new Set(records.map(r=>r.status))].map(s=>[s,records.filter(r=>r.status===s).length]));\nreturn [{json:{cases:records.length,summary,results:records,payment_authorized:false,pass_condition:'Human reviewer required for every invoice'}}];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "277a626a-3bfe-4c11-850d-86bc5fc6f2ce",
+      "name": "Summary for class",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1010,
+        240
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Load 8 synthetic invoices",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load 8 synthetic invoices": {
+      "main": [
+        [
+          {
+            "node": "Classify invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify invoice": {
+      "main": [
+        [
+          {
+            "node": "Summary for class",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "tags": [],
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
