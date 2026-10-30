@@ -1,0 +1,379 @@
+{
+  "name": "Week10 V4 | sub | Alerts + Gemini explanation",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "00000000-0000-4000-8000-000000000008",
+      "name": "When called with classified cases",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000009",
+                    "leftValue": "={{ $json.priority }}",
+                    "rightValue": "P1",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "P1 hold"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000010",
+                    "leftValue": "={{ $json.priority }}",
+                    "rightValue": "P2",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "P2 review"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000011",
+                    "leftValue": "={{ $json.priority }}",
+                    "rightValue": "P3",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "P3 ready"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "00000000-0000-4000-8000-000000000012",
+      "name": "Route by priority",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        240,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "={{ $json.telegram_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "None"
+        }
+      },
+      "id": "00000000-0000-4000-8000-000000000013",
+      "name": "Telegram: urgent HOLD alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ \"You are an accounts-payable process analyst at a training company. A deterministic rule engine has ALREADY decided this invoice's status; you only explain it.\\n\\nInvoice: \" + $json.invoice_id + \" from \" + $json.supplier + \", amount $\" + $json.amount_usd + \", PO \" + ($json.po_id || \"none\") + \".\\nStatus (fixed): \" + $json.status + \"\\nFlags: \" + $json.control_flags + \"\\nRule reason: \" + $json.reason + \"\\n\\nWrite 2 short sentences for the AP reviewer: what the risk is and what to check before approving. Do NOT change or question the status, do NOT say the invoice is approved, paid or ready for payment, do NOT ask for personal or bank details.\" }}"
+      },
+      "id": "00000000-0000-4000-8000-000000000014",
+      "name": "Gemini: explain the review (advisory)",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        560,
+        320
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-lite-latest",
+        "options": {
+          "temperature": 0.1
+        }
+      },
+      "id": "00000000-0000-4000-8000-000000000015",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        560,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Guardrail: the model may explain, never decide. Pair each AI answer with its case (same order),\n// reject text that claims approval/payment or names a different status, and fall back to the rule reason.\nconst cases = $('Route by priority').all(1);\nconst STATUSES = ['READY_FOR_HUMAN_CHECK','HOLD_INVALID_DATA','HOLD_DUPLICATE','HOLD_BANK_CHANGE','REVIEW_MISSING_PO','REVIEW_UNKNOWN_PO',\n  'REVIEW_PO_CLOSED','REVIEW_PO_SUPPLIER','REVIEW_PO_ALREADY_INVOICED','REVIEW_AMOUNT_MISMATCH','REVIEW_SPLIT_SUSPECTED','REVIEW_MANAGER'];\nconst FORBIDDEN = /(approved for payment|has been (approved|paid)|is approved|been paid|payment (has been|was|is) (made|sent|released|scheduled)|ready for payment|authori[sz]ed? (the |this )?payment|i (have )?approved|bank (account|details) (number|to)|send (us|me) your)/i;\nreturn $input.all().map((item, i) => {\n  const c = cases[i].json;\n  const raw = String(item.json.text ?? item.json.output ?? '').trim();\n  const otherStatus = STATUSES.find(s => s !== c.status && raw.includes(s));\n  const problems = [];\n  if (!raw) problems.push('empty answer');\n  if (FORBIDDEN.test(raw)) problems.push('claims approval/payment or asks for bank details');\n  if (otherStatus) problems.push('mentions a different status ' + otherStatus);\n  const passed = problems.length === 0;\n  const ai_commentary = passed ? raw.slice(0, 900) : `[withheld by guardrail: ${problems.join('; ')}] Rule reason: ${c.reason}`;\n  const ai_guardrail = passed ? 'PASSED' : 'BLOCKED';\n  return { json: { ...c, ai_commentary, ai_guardrail,\n    telegram_text: `${c.telegram_text}\\n\\nAI note (advisory, guardrail ${ai_guardrail}): ${ai_commentary}` } };\n});"
+      },
+      "id": "00000000-0000-4000-8000-000000000016",
+      "name": "Guardrail + join with rule output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "Week10_AP_Ledger_V4",
+          "cachedResultName": "Week10_AP_Ledger_V4"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.ledger_row_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ai_commentary": "={{ $json.ai_commentary }}",
+            "ai_guardrail": "={{ $json.ai_guardrail }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ai_commentary",
+              "displayName": "ai_commentary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ai_guardrail",
+              "displayName": "ai_guardrail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "00000000-0000-4000-8000-000000000017",
+      "name": "Save AI note to ledger row",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "={{ $('Guardrail + join with rule output').item.json.telegram_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "None"
+        }
+      },
+      "id": "00000000-0000-4000-8000-000000000018",
+      "name": "Telegram: review with AI note",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1360,
+        320
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "00000000-0000-4000-8000-000000000019",
+      "name": "P3: logged only (goes in daily digest)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        560,
+        760
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Alerts by priority\n- **P1 HOLD** (duplicate, bank change, bad data): instant Telegram, facts only, no AI\n- **P2 REVIEW**: Gemini writes a 2-sentence explanation; a **guardrail** rejects any text that claims approval/payment, names another status or asks for bank details; the note is written back to the ledger row; then Telegram\n- **P3 READY**: no message (avoids alert fatigue); counted in the daily digest",
+        "width": 560,
+        "height": 300,
+        "color": 5
+      },
+      "id": "00000000-0000-4000-8000-000000000020",
+      "name": "About this sub-workflow",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -120
+      ]
+    }
+  ],
+  "connections": {
+    "When called with classified cases": {
+      "main": [
+        [
+          {
+            "node": "Route by priority",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by priority": {
+      "main": [
+        [
+          {
+            "node": "Telegram: urgent HOLD alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Gemini: explain the review (advisory)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "P3: logged only (goes in daily digest)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini: explain the review (advisory)": {
+      "main": [
+        [
+          {
+            "node": "Guardrail + join with rule output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardrail + join with rule output": {
+      "main": [
+        [
+          {
+            "node": "Save AI note to ledger row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save AI note to ledger row": {
+      "main": [
+        [
+          {
+            "node": "Telegram: review with AI note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Gemini: explain the review (advisory)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Singapore",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

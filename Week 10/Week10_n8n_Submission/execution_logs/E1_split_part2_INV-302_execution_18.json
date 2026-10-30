@@ -1,0 +1,292 @@
+{
+  "id": "18",
+  "mode": "webhook",
+  "status": "success",
+  "startedAt": "2026-10-25T17:58:40.268Z",
+  "stoppedAt": "2026-10-25T17:58:41.522Z",
+  "workflowId": "bwZ1w6LRe5FcI9Rw",
+  "workflow": "Week10 V4 | E1 - AP intake form",
+  "nodes": [
+    {
+      "node": "AP intake form",
+      "status": "success",
+      "items_out": 1,
+      "ms": 0,
+      "error": null
+    },
+    {
+      "node": "Tag channel",
+      "status": "success",
+      "items_out": 1,
+      "ms": 3,
+      "error": null
+    },
+    {
+      "node": "Run V4 core (rules + ledger)",
+      "status": "success",
+      "items_out": 1,
+      "ms": 217,
+      "error": null
+    },
+    {
+      "node": "Start alerts (no wait)",
+      "status": "success",
+      "items_out": 1,
+      "ms": 111,
+      "error": null
+    },
+    {
+      "node": "Show triage result",
+      "status": "success",
+      "items_out": 1,
+      "ms": 0,
+      "error": null
+    }
+  ],
+  "runData": {
+    "AP intake form": [
+      {
+        "startTime": 1792951120313,
+        "executionIndex": 0,
+        "source": [],
+        "hints": [],
+        "executionTime": 0,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "team_id": "T01",
+                  "invoice_id": "INV-302",
+                  "supplier": "EPSILON",
+                  "invoice_ref": "E-102",
+                  "amount_usd": 5500,
+                  "po_id": "PO-507",
+                  "bank_changed": "NO",
+                  "submittedAt": "2026-10-26T01:58:40.226+08:00",
+                  "formMode": "production"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Tag channel": [
+      {
+        "startTime": 1792951120313,
+        "executionIndex": 1,
+        "source": [
+          {
+            "previousNode": "AP intake form",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 3,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "team_id": "T01",
+                  "invoice_id": "INV-302",
+                  "supplier": "EPSILON",
+                  "invoice_ref": "E-102",
+                  "amount_usd": 5500,
+                  "po_id": "PO-507",
+                  "bank_changed": "NO",
+                  "submittedAt": "2026-10-26T01:58:40.226+08:00",
+                  "formMode": "production",
+                  "channel": "form"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Run V4 core (rules + ledger)": [
+      {
+        "startTime": 1792951120316,
+        "executionIndex": 2,
+        "source": [
+          {
+            "previousNode": "Tag channel",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 217,
+        "metadata": {
+          "subExecution": {
+            "executionId": "19",
+            "workflowId": "PRhnmZYZUp9VXpvb"
+          },
+          "subExecutionsCount": 1
+        },
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV302-20432",
+                  "channel": "form",
+                  "priority": "P2",
+                  "team_id": "T01",
+                  "invoice_id": "INV-302",
+                  "supplier": "EPSILON",
+                  "invoice_ref": "E-102",
+                  "amount_usd": 5500,
+                  "po_id": "PO-507",
+                  "bank_changed": "NO",
+                  "status": "REVIEW_SPLIT_SUSPECTED",
+                  "reason": "3 invoices from EPSILON in 7 days, each <= $10,000 but $12000.00 together (approval-limit splitting?)",
+                  "control_flags": "SPLIT_SUSPECTED",
+                  "received_at": "2026-10-25T17:58:40.432Z",
+                  "manager_approval_required": true,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "",
+                  "ai_guardrail": "PENDING",
+                  "telegram_text": "MERIDIAN AP V4 | 🟠 REVIEW\nCase: AP-20261025-INV302-20432\nInvoice: INV-302 (form)\nSupplier: EPSILON  Ref: E-102\nAmount: $5500.00  PO: PO-507\nStatus: REVIEW_SPLIT_SUSPECTED\nFlags: SPLIT_SUSPECTED\nReason: 3 invoices from EPSILON in 7 days, each <= $10,000 but $12000.00 together (approval-limit splitting?)\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "ledger_row_id": 10
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Start alerts (no wait)": [
+      {
+        "startTime": 1792951120533,
+        "executionIndex": 3,
+        "source": [
+          {
+            "previousNode": "Run V4 core (rules + ledger)",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 111,
+        "metadata": {
+          "subExecution": {
+            "executionId": "20",
+            "workflowId": "Ag1NCqaexHYo4AyL"
+          },
+          "subExecutionsCount": 1
+        },
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV302-20432",
+                  "channel": "form",
+                  "priority": "P2",
+                  "team_id": "T01",
+                  "invoice_id": "INV-302",
+                  "supplier": "EPSILON",
+                  "invoice_ref": "E-102",
+                  "amount_usd": 5500,
+                  "po_id": "PO-507",
+                  "bank_changed": "NO",
+                  "status": "REVIEW_SPLIT_SUSPECTED",
+                  "reason": "3 invoices from EPSILON in 7 days, each <= $10,000 but $12000.00 together (approval-limit splitting?)",
+                  "control_flags": "SPLIT_SUSPECTED",
+                  "received_at": "2026-10-25T17:58:40.432Z",
+                  "manager_approval_required": true,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "",
+                  "ai_guardrail": "PENDING",
+                  "telegram_text": "MERIDIAN AP V4 | 🟠 REVIEW\nCase: AP-20261025-INV302-20432\nInvoice: INV-302 (form)\nSupplier: EPSILON  Ref: E-102\nAmount: $5500.00  PO: PO-507\nStatus: REVIEW_SPLIT_SUSPECTED\nFlags: SPLIT_SUSPECTED\nReason: 3 invoices from EPSILON in 7 days, each <= $10,000 but $12000.00 together (approval-limit splitting?)\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "ledger_row_id": 10
+                },
+                "index": 0,
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Show triage result": [
+      {
+        "startTime": 1792951121522,
+        "executionIndex": 0,
+        "source": [
+          {
+            "previousNode": "Start alerts (no wait)",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 0,
+        "metadata": {
+          "resumeFormUrl": "http://localhost:5678/form-waiting/18?signature=9387cd21a9e22743bbcbcf9a8c3e6d13141f10d8c2a120d35dc1492b651091be",
+          "forwardAllOutputs": true
+        },
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV302-20432",
+                  "channel": "form",
+                  "priority": "P2",
+                  "team_id": "T01",
+                  "invoice_id": "INV-302",
+                  "supplier": "EPSILON",
+                  "invoice_ref": "E-102",
+                  "amount_usd": 5500,
+                  "po_id": "PO-507",
+                  "bank_changed": "NO",
+                  "status": "REVIEW_SPLIT_SUSPECTED",
+                  "reason": "3 invoices from EPSILON in 7 days, each <= $10,000 but $12000.00 together (approval-limit splitting?)",
+                  "control_flags": "SPLIT_SUSPECTED",
+                  "received_at": "2026-10-25T17:58:40.432Z",
+                  "manager_approval_required": true,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "",
+                  "ai_guardrail": "PENDING",
+                  "telegram_text": "MERIDIAN AP V4 | 🟠 REVIEW\nCase: AP-20261025-INV302-20432\nInvoice: INV-302 (form)\nSupplier: EPSILON  Ref: E-102\nAmount: $5500.00  PO: PO-507\nStatus: REVIEW_SPLIT_SUSPECTED\nFlags: SPLIT_SUSPECTED\nReason: 3 invoices from EPSILON in 7 days, each <= $10,000 but $12000.00 together (approval-limit splitting?)\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "ledger_row_id": 10
+                },
+                "index": 0,
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ]
+  }
+}

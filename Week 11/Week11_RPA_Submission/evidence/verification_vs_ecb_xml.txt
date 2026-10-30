@@ -1,0 +1,15 @@
+Checking ap_fx_exposure_2026-10-23.csv against https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist-90d.xml
+Reference date 2026-10-23; 1-month window 2026-09-24 .. 2026-10-23 (22 fixings)
+
+INV-F101  EUR      18,450.00  SGD bot   26,401.95 / feed   26,401.95   risk bot   466.78 / feed   466.78   OK
+INV-F102  USD      42,300.00  SGD bot   54,079.60 / feed   54,079.60   risk bot   188.04 / feed   188.04   OK
+INV-F103  JPY   3,850,000.00  SGD bot   31,390.52 / feed   31,390.52   risk bot     0.00 / feed     0.00   OK
+INV-F104  MYR      56,200.00  SGD bot   17,586.70 / feed   17,586.70   risk bot    73.99 / feed    73.99   OK
+INV-F105  CNY     210,000.00  SGD bot   40,250.47 / feed   40,250.47   risk bot    14.49 / feed    14.49   OK
+INV-F106  GBP       9,800.00  SGD bot   16,749.24 / feed   16,749.24   risk bot    25.04 / feed    25.04   OK
+INV-F107  USD       7,150.00  SGD bot    9,141.11 / feed    9,141.11   risk bot    31.78 / feed    31.78   OK
+INV-F108  AUD      23,900.00  SGD bot   21,457.37 / feed   21,457.37   risk bot    37.41 / feed    37.41   OK
+INV-F109  SGD      12,000.00  SGD bot   12,000.00 / feed   12,000.00   risk bot     0.00 / feed     0.00   OK
+INV-F110  XYZ: not an ECB currency -> bot status EXCEPTION  OK
+
+10 invoices checked, 0 mismatches -> PASS

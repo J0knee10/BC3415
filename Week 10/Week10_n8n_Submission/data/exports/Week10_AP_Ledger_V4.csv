@@ -1,0 +1,109 @@
+id,case_id,channel,priority,team_id,invoice_id,supplier,invoice_ref,amount_usd,po_id,bank_changed,status,reason,control_flags,received_at,manager_approval_required,human_approval_required,payment_authorized,ai_can_override_status,ai_commentary,ai_guardrail,telegram_text,createdAt,updatedAt
+1,AP-20261025-INV201-02418,api,P3,T01,INV-201,ALPHA,A-777,1250,PO-501,NO,READY_FOR_HUMAN_CHECK,All V4 controls passed; human confirmation still required,NONE,2026-10-25T17:58:22.418Z,false,true,false,false,,NOT_REQUIRED,"MERIDIAN AP V4 | 🟢 READY
+Case: AP-20261025-INV201-02418
+Invoice: INV-201 (api)
+Supplier: ALPHA  Ref: A-777
+Amount: $1250.00  PO: PO-501
+Status: READY_FOR_HUMAN_CHECK
+Flags: NONE
+Reason: All V4 controls passed; human confirmation still required
+HUMAN REVIEW REQUIRED. NO PAYMENT MADE.",2026-10-25T09:58:22.423Z,2026-10-25T09:58:22.423Z
+2,AP-20261025-INV202-02419,api,P3,T01,INV-202,BETA,B-431,8950,PO-502,NO,READY_FOR_HUMAN_CHECK,All V4 controls passed; human confirmation still required,NONE,2026-10-25T17:58:22.418Z,false,true,false,false,,NOT_REQUIRED,"MERIDIAN AP V4 | 🟢 READY
+Case: AP-20261025-INV202-02419
+Invoice: INV-202 (api)
+Supplier: BETA  Ref: B-431
+Amount: $8950.00  PO: PO-502
+Status: READY_FOR_HUMAN_CHECK
+Flags: NONE
+Reason: All V4 controls passed; human confirmation still required
+HUMAN REVIEW REQUIRED. NO PAYMENT MADE.",2026-10-25T09:58:22.424Z,2026-10-25T09:58:22.424Z
+3,AP-20261025-INV203-02420,api,P2,T01,INV-203,GAMMA,G-211,14800,,NO,REVIEW_MISSING_PO,Purchase order missing; finance-manager approval also required,MISSING_PO|HIGH_VALUE,2026-10-25T17:58:22.418Z,true,true,false,false,"Processing this high-value invoice without a purchase order risks unauthorized expenditure and budget discrepancies. Before approving, please verify the legitimacy of the expense with the vendor and obtain the required finance-manager sign-off.",PASSED,"MERIDIAN AP V4 | 🟠 REVIEW
+Case: AP-20261025-INV203-02420
+Invoice: INV-203 (api)
+Supplier: GAMMA  Ref: G-211
+Amount: $14800.00  PO: -
+Status: REVIEW_MISSING_PO
+Flags: MISSING_PO|HIGH_VALUE
+Reason: Purchase order missing; finance-manager approval also required
+HUMAN REVIEW REQUIRED. NO PAYMENT MADE.",2026-10-25T09:58:22.425Z,2026-10-25T09:58:28.587Z
+4,AP-20261025-INV204-02421,api,P1,T01,INV-204,ALPHA,A-776,1250,PO-501,NO,HOLD_DUPLICATE,Supplier and reference already in the historic posted-invoice fixture,DUPLICATE,2026-10-25T17:58:22.418Z,false,true,false,false,,NOT_REQUIRED,"MERIDIAN AP V4 | 🔴 HOLD
+Case: AP-20261025-INV204-02421
+Invoice: INV-204 (api)
+Supplier: ALPHA  Ref: A-776
+Amount: $1250.00  PO: PO-501
+Status: HOLD_DUPLICATE
+Flags: DUPLICATE
+Reason: Supplier and reference already in the historic posted-invoice fixture
+HUMAN REVIEW REQUIRED. NO PAYMENT MADE.",2026-10-25T09:58:22.425Z,2026-10-25T09:58:22.425Z
+5,AP-20261025-INV205-02422,api,P2,T01,INV-205,DELTA,D-555,24600,PO-505,NO,REVIEW_MANAGER,"Finance-manager approval required (amount > $10,000)",HIGH_VALUE,2026-10-25T17:58:22.418Z,true,true,false,false,"This invoice carries a financial risk of exceeding the standard threshold, which exposes the company to unverified large-scale spending. Before approving, check that the associated PO PO-505 has been fully budgeted and that the deliverables from DELTA have been satisfactorily received.",PASSED,"MERIDIAN AP V4 | 🟠 REVIEW
+Case: AP-20261025-INV205-02422
+Invoice: INV-205 (api)
+Supplier: DELTA  Ref: D-555
+Amount: $24600.00  PO: PO-505
+Status: REVIEW_MANAGER
+Flags: HIGH_VALUE
+Reason: Finance-manager approval required (amount > $10,000)
+HUMAN REVIEW REQUIRED. NO PAYMENT MADE.",2026-10-25T09:58:22.426Z,2026-10-25T09:58:28.675Z
+6,AP-20261025-INV206-02423,api,P2,T01,INV-206,BETA,B-432,9150,PO-502,NO,REVIEW_PO_ALREADY_INVOICED,PO-502 has already been invoiced under another reference (possible re-billing); finance-manager approval also required,PO_ALREADY_INVOICED|SPLIT_SUSPECTED,2026-10-25T17:58:22.418Z,true,true,false,false,"The risk is that PO-502 may have already been billed under a different reference, and the split-invoice suspicion requires finance-manager approval. Please verify the previous invoices tied to PO-502 and obtain formal sign-off from the finance manager before proceeding.",PASSED,"MERIDIAN AP V4 | 🟠 REVIEW
+Case: AP-20261025-INV206-02423
+Invoice: INV-206 (api)
+Supplier: BETA  Ref: B-432
+Amount: $9150.00  PO: PO-502
+Status: REVIEW_PO_ALREADY_INVOICED
+Flags: PO_ALREADY_INVOICED|SPLIT_SUSPECTED
+Reason: PO-502 has already been invoiced under another reference (possible re-billing); finance-manager approval also required
+HUMAN REVIEW REQUIRED. NO PAYMENT MADE.",2026-10-25T09:58:22.426Z,2026-10-25T09:58:28.759Z
+7,AP-20261025-INV207-02424,api,P2,T01,INV-207,EPSILON,E-007,500,PO-999,NO,REVIEW_UNKNOWN_PO,PO-999 is not in the PO master table,UNKNOWN_PO,2026-10-25T17:58:22.418Z,false,true,false,false,Paying against an unverified purchase order creates the risk of unauthorized spending or billing discrepancies. Check with the procurement team to confirm if PO-999 is valid and should be added to the PO master table before proceeding.,PASSED,"MERIDIAN AP V4 | 🟠 REVIEW
+Case: AP-20261025-INV207-02424
+Invoice: INV-207 (api)
+Supplier: EPSILON  Ref: E-007
+Amount: $500.00  PO: PO-999
+Status: REVIEW_UNKNOWN_PO
+Flags: UNKNOWN_PO
+Reason: PO-999 is not in the PO master table
+HUMAN REVIEW REQUIRED. NO PAYMENT MADE.",2026-10-25T09:58:22.427Z,2026-10-25T09:58:28.842Z
+8,AP-20261025-INV208-02425,api,P1,T01,INV-208,GAMMA,G-323,4700,PO-503,YES,HOLD_BANK_CHANGE,Bank details changed; call the supplier on a known number before paying,BANK_CHANGE,2026-10-25T17:58:22.418Z,false,true,false,false,,NOT_REQUIRED,"MERIDIAN AP V4 | 🔴 HOLD
+Case: AP-20261025-INV208-02425
+Invoice: INV-208 (api)
+Supplier: GAMMA  Ref: G-323
+Amount: $4700.00  PO: PO-503
+Status: HOLD_BANK_CHANGE
+Flags: BANK_CHANGE
+Reason: Bank details changed; call the supplier on a known number before paying
+HUMAN REVIEW REQUIRED. NO PAYMENT MADE.",2026-10-25T09:58:22.427Z,2026-10-25T09:58:22.427Z
+9,AP-20261025-INV301-14618,form,P3,T01,INV-301,EPSILON,E-101,6000,PO-506,NO,READY_FOR_HUMAN_CHECK,All V4 controls passed; human confirmation still required,NONE,2026-10-25T17:58:34.618Z,false,true,false,false,,NOT_REQUIRED,"MERIDIAN AP V4 | 🟢 READY
+Case: AP-20261025-INV301-14618
+Invoice: INV-301 (form)
+Supplier: EPSILON  Ref: E-101
+Amount: $6000.00  PO: PO-506
+Status: READY_FOR_HUMAN_CHECK
+Flags: NONE
+Reason: All V4 controls passed; human confirmation still required
+HUMAN REVIEW REQUIRED. NO PAYMENT MADE.",2026-10-25T09:58:34.623Z,2026-10-25T09:58:34.623Z
+10,AP-20261025-INV302-20432,form,P2,T01,INV-302,EPSILON,E-102,5500,PO-507,NO,REVIEW_SPLIT_SUSPECTED,"3 invoices from EPSILON in 7 days, each <= $10,000 but $12000.00 together (approval-limit splitting?)",SPLIT_SUSPECTED,2026-10-25T17:58:40.432Z,true,true,false,false,"This invoice presents a risk of invoice splitting to bypass standard approval thresholds, as multiple submissions from EPSILON totaling $12,000.00 were received within a 7-day window. Please verify the business justification for these separate purchases and confirm whether they should have been consolidated under a single authorization.",PASSED,"MERIDIAN AP V4 | 🟠 REVIEW
+Case: AP-20261025-INV302-20432
+Invoice: INV-302 (form)
+Supplier: EPSILON  Ref: E-102
+Amount: $5500.00  PO: PO-507
+Status: REVIEW_SPLIT_SUSPECTED
+Flags: SPLIT_SUSPECTED
+Reason: 3 invoices from EPSILON in 7 days, each <= $10,000 but $12000.00 together (approval-limit splitting?)
+HUMAN REVIEW REQUIRED. NO PAYMENT MADE.",2026-10-25T09:58:40.436Z,2026-10-25T09:58:41.894Z
+11,AP-20261025-INV201B-26166,form,P1,T02,INV-201B,ALPHA,A-777,1250,PO-501,NO,HOLD_DUPLICATE,Supplier and reference already submitted (found in AP ledger table or earlier in this batch),DUPLICATE,2026-10-25T17:58:46.166Z,false,true,false,false,,NOT_REQUIRED,"MERIDIAN AP V4 | 🔴 HOLD
+Case: AP-20261025-INV201B-26166
+Invoice: INV-201B (form)
+Supplier: ALPHA  Ref: A-777
+Amount: $1250.00  PO: PO-501
+Status: HOLD_DUPLICATE
+Flags: DUPLICATE
+Reason: Supplier and reference already submitted (found in AP ledger table or earlier in this batch)
+HUMAN REVIEW REQUIRED. NO PAYMENT MADE.",2026-10-25T09:58:46.171Z,2026-10-25T09:58:46.171Z
+12,AP-20261025-INV303-30550,api,P2,T03,INV-303,ZETA,Z-1,3200,PO-508,NO,REVIEW_PO_CLOSED,"PO-508 is CLOSED, not OPEN",PO_CLOSED,2026-10-25T17:58:50.550Z,false,true,false,false,"Approving this invoice carries the financial risk of paying against a completed or canceled purchase order, which can cause budget discrepancies. Please verify with the procurement team whether PO-508 should be officially reopened or if a new purchase order is required before proceeding.",PASSED,"MERIDIAN AP V4 | 🟠 REVIEW
+Case: AP-20261025-INV303-30550
+Invoice: INV-303 (api)
+Supplier: ZETA  Ref: Z-1
+Amount: $3200.00  PO: PO-508
+Status: REVIEW_PO_CLOSED
+Flags: PO_CLOSED
+Reason: PO-508 is CLOSED, not OPEN
+HUMAN REVIEW REQUIRED. NO PAYMENT MADE.",2026-10-25T09:58:50.555Z,2026-10-25T09:58:52.033Z

@@ -1,0 +1,55 @@
+id,team_id,invoice_id,supplier,invoice_ref,amount_usd,po_id,bank_changed,status,reason,control_flags,received_at,manager_approval_required,human_approval_required,payment_authorized,ai_can_override_status,telegram_text,createdAt,updatedAt
+1,T01,INV-201,ALPHA,A-777,1250,PO-501,NO,READY_FOR_HUMAN_CHECK,Rules passed; human confirmation still required,NONE,2026-10-25T17:48:12.975Z,false,true,false,false,"MERIDIAN | SIMULATED INVOICE TRIAGE
+Team: T01
+Invoice: INV-201
+Supplier: ALPHA
+Amount: $1250.00
+Status: READY_FOR_HUMAN_CHECK
+Flags: NONE
+Reason: Rules passed; human confirmation still required
+HUMAN REVIEW REQUIRED. NO PAYMENT.",2026-10-25T09:48:12.981Z,2026-10-25T09:48:12.981Z
+2,T01,INV-203,GAMMA,G-211,14800,,NO,REVIEW_MISSING_PO,"Purchase order missing; finance-manager approval also required (>$10,000)",MISSING_PO|HIGH_VALUE,2026-10-25T17:48:18.989Z,true,true,false,false,"MERIDIAN | SIMULATED INVOICE TRIAGE
+Team: T01
+Invoice: INV-203
+Supplier: GAMMA
+Amount: $14800.00
+Status: REVIEW_MISSING_PO
+Flags: MISSING_PO|HIGH_VALUE
+Reason: Purchase order missing; finance-manager approval also required (>$10,000)
+HUMAN REVIEW REQUIRED. NO PAYMENT.",2026-10-25T09:48:18.994Z,2026-10-25T09:48:18.994Z
+3,T01,INV-204,ALPHA,A-776,1250,PO-501,NO,HOLD_DUPLICATE,Supplier and reference already in synthetic historic ledger,HISTORIC_DUPLICATE,2026-10-25T17:48:25.021Z,false,true,false,false,"MERIDIAN | SIMULATED INVOICE TRIAGE
+Team: T01
+Invoice: INV-204
+Supplier: ALPHA
+Amount: $1250.00
+Status: HOLD_DUPLICATE
+Flags: HISTORIC_DUPLICATE
+Reason: Supplier and reference already in synthetic historic ledger
+HUMAN REVIEW REQUIRED. NO PAYMENT.",2026-10-25T09:48:25.025Z,2026-10-25T09:48:25.025Z
+4,T01,INV-205,DELTA,D-555,24600,PO-505,NO,REVIEW_MANAGER,"Finance-manager approval required (amount > $10,000)",HIGH_VALUE,2026-10-25T17:48:31.021Z,true,true,false,false,"MERIDIAN | SIMULATED INVOICE TRIAGE
+Team: T01
+Invoice: INV-205
+Supplier: DELTA
+Amount: $24600.00
+Status: REVIEW_MANAGER
+Flags: HIGH_VALUE
+Reason: Finance-manager approval required (amount > $10,000)
+HUMAN REVIEW REQUIRED. NO PAYMENT.",2026-10-25T09:48:31.026Z,2026-10-25T09:48:31.026Z
+5,T02,INV-203,GAMMA,G-211,14800,,NO,REVIEW_MISSING_PO,"Purchase order missing; finance-manager approval also required (>$10,000)",MISSING_PO|HIGH_VALUE,2026-10-25T17:48:37.097Z,true,true,false,false,"MERIDIAN | SIMULATED INVOICE TRIAGE
+Team: T02
+Invoice: INV-203
+Supplier: GAMMA
+Amount: $14800.00
+Status: REVIEW_MISSING_PO
+Flags: MISSING_PO|HIGH_VALUE
+Reason: Purchase order missing; finance-manager approval also required (>$10,000)
+HUMAN REVIEW REQUIRED. NO PAYMENT.",2026-10-25T09:48:37.103Z,2026-10-25T09:48:37.103Z
+6,T02,INV-203,GAMMA,G-211,14800,,NO,REVIEW_MISSING_PO,"Purchase order missing; finance-manager approval also required (>$10,000)",MISSING_PO|HIGH_VALUE,2026-10-25T17:54:31.317Z,true,true,false,false,"MERIDIAN | SIMULATED INVOICE TRIAGE
+Team: T02
+Invoice: INV-203
+Supplier: GAMMA
+Amount: $14800.00
+Status: REVIEW_MISSING_PO
+Flags: MISSING_PO|HIGH_VALUE
+Reason: Purchase order missing; finance-manager approval also required (>$10,000)
+HUMAN REVIEW REQUIRED. NO PAYMENT.",2026-10-25T09:54:31.325Z,2026-10-25T09:54:31.325Z

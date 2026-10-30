@@ -1,0 +1,11 @@
+invoice_id,supplier,currency,amount,due_date,po_id
+INV-F101,Lumen Optics GmbH,EUR,18450.00,2026-10-30,PO-711
+INV-F102,Pacific Freight Co,USD,42300.00,2026-11-05,PO-712
+INV-F103,Kaito Components KK,JPY,3850000,2026-11-12,PO-713
+INV-F104,Selangor Packaging Sdn Bhd,MYR,56200.00,2026-10-28,PO-714
+INV-F105,Shenzhen Sensorics Ltd,CNY,210000.00,2026-11-20,PO-715
+INV-F106,Thames Analytics Ltd,GBP,9800.00,2026-10-24,PO-716
+INV-F107,Pacific Freight Co,USD,7150.00,2026-12-01,PO-717
+INV-F108,Southern Cross Logistics,AUD,23900.00,2026-11-15,PO-718
+INV-F109,Raffles Office Supplies,SGD,12000.00,2026-11-02,PO-719
+INV-F110,Unknown Trading House,XYZ,5000.00,2026-11-09,PO-720

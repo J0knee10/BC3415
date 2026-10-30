@@ -1,0 +1,180 @@
+{
+  "name": "Week10 V3 | C - Invoice rules to Data Table to Telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Meridian invoice review",
+        "formDescription": "Educational triage only. Never enter real invoices or personal details.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "team_id",
+              "fieldName": "team_id",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "invoice_id",
+              "fieldName": "invoice_id",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "supplier",
+              "fieldName": "supplier",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "invoice_ref",
+              "fieldName": "invoice_ref",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "amount_usd",
+              "fieldName": "amount_usd",
+              "fieldType": "number",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "po_id",
+              "fieldName": "po_id",
+              "fieldType": "text",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "bank_changed",
+              "fieldName": "bank_changed",
+              "fieldType": "text",
+              "requiredField": false
+            }
+          ]
+        },
+        "responseMode": "onReceived",
+        "options": {
+          "path": "week10-invoice",
+          "respondWithOptions": {
+            "values": {
+              "formSubmittedText": "Thank you. This is a classroom simulation; no payment is authorized."
+            }
+          }
+        }
+      },
+      "id": "569f6c96-88c2-4f4a-8192-b9c41579433d",
+      "name": "On form submission",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        120,
+        240
+      ],
+      "webhookId": "55a7dd30-3eec-421f-8841-64aed75ea3c6"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Week 10 V3. Run Once for All Items. SYNTHETIC FINANCE POLICY ONLY.\n// Rules are deterministic. Gemini may explain, never change status or pay.\n// Teaching limits: PO master and historic ledger below are fixtures, NOT live table lookups.\nconst poMaster = {\n  'PO-501': {supplier:'ALPHA',amount:1250},\n  'PO-502': {supplier:'BETA',amount:8950},\n  'PO-503': {supplier:'GAMMA',amount:4700},\n  'PO-505': {supplier:'DELTA',amount:24600},\n};\nconst posted = new Set(['ALPHA|A-776']); // historical fixture; does not grow automatically\nreturn $input.all().map(item => {\n  const d=item.json;\n  const team_id=String(d.team_id ?? '').trim().slice(0,20);\n  const invoice_id=String(d.invoice_id ?? '').trim().toUpperCase().slice(0,60);\n  const supplier=String(d.supplier ?? '').trim().toUpperCase().slice(0,60);\n  const invoice_ref=String(d.invoice_ref ?? '').trim().toUpperCase().slice(0,60);\n  const po_id=String(d.po_id ?? '').trim().toUpperCase().slice(0,60);\n  const raw=String(d.amount_usd ?? '').trim();\n  const amount=raw!=='' ? Number(raw) : NaN;\n  const bank_changed=['YES','TRUE','1'].includes(String(d.bank_changed ?? 'NO').trim().toUpperCase());\n  const manager_approval_required=Number.isFinite(amount) && amount>10000;\n  const flags=[];\n  let status='READY_FOR_HUMAN_CHECK', primary='Rules passed; human confirmation still required';\n  if(!invoice_id||!supplier||!invoice_ref||!Number.isFinite(amount)||amount<=0||amount>=10000000){\n    status='HOLD_INVALID_DATA';primary='Required field missing or invalid amount'; flags.push('INVALID_DATA');\n  } else if(posted.has(`${supplier}|${invoice_ref}`)){\n    status='HOLD_DUPLICATE';primary='Supplier and reference already in synthetic historic ledger';flags.push('HISTORIC_DUPLICATE');\n  } else if(bank_changed){\n    status='HOLD_BANK_CHANGE';primary='Bank details changed; independent verification required';flags.push('BANK_CHANGE');\n  } else if(!po_id){\n    status='REVIEW_MISSING_PO';primary='Purchase order missing';flags.push('MISSING_PO');\n  } else if(!poMaster[po_id]){\n    status='REVIEW_UNKNOWN_PO';primary='PO ID not in the approved synthetic PO master';flags.push('UNKNOWN_PO');\n  } else if(poMaster[po_id].supplier!==supplier){\n    status='REVIEW_PO_SUPPLIER';primary='Supplier does not match the PO master';flags.push('PO_SUPPLIER_MISMATCH');\n  } else if(Math.abs(poMaster[po_id].amount-amount)>0.01){\n    status='REVIEW_AMOUNT_MISMATCH';primary=`PO amount is $${poMaster[po_id].amount.toFixed(2)}, not the invoice amount`;flags.push('AMOUNT_MISMATCH');\n  } else if(manager_approval_required){\n    status='REVIEW_MANAGER';primary='Finance-manager approval required (amount > $10,000)';flags.push('HIGH_VALUE');\n  }\n  if(manager_approval_required&&!flags.includes('HIGH_VALUE')) flags.push('HIGH_VALUE');\n  const reason=primary + (manager_approval_required && status!=='REVIEW_MANAGER' ? '; finance-manager approval also required (>$10,000)' : '');\n  const control_flags=flags.join('|') || 'NONE';\n  const telegram_text=`MERIDIAN | SIMULATED INVOICE TRIAGE\\nTeam: ${team_id}\\nInvoice: ${invoice_id}\\nSupplier: ${supplier}\\nAmount: $${Number.isFinite(amount)?amount.toFixed(2):'INVALID'}\\nStatus: ${status}\\nFlags: ${control_flags}\\nReason: ${reason}\\nHUMAN REVIEW REQUIRED. NO PAYMENT.`;\n  return {json:{\n    team_id,invoice_id,supplier,invoice_ref,\n    amount_usd:Number.isFinite(amount)?amount:null,po_id,bank_changed:bank_changed?'YES':'NO',\n    status,reason,control_flags,received_at:new Date().toISOString(),\n    manager_approval_required,human_approval_required:true,payment_authorized:false,\n    ai_can_override_status:false,telegram_text\n  }};\n});",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "fe9db171-b3d1-4485-9a49-6946591c9e8a",
+      "name": "Classify invoice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Week10_Invoice_Triage"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "2ccbc457-5000-424f-ab7c-b87097d5c7ad",
+      "name": "Save to Data Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        690,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "={{ $(\"Classify invoice\").first().json.telegram_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "None"
+        }
+      },
+      "id": "a0bd1150-d726-44c7-b8bd-6111554fb0a1",
+      "name": "Send Telegram notification",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        980,
+        240
+      ]
+    }
+  ],
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Classify invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify invoice": {
+      "main": [
+        [
+          {
+            "node": "Save to Data Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Data Table": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "tags": [],
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

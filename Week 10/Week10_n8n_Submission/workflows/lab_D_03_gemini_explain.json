@@ -1,0 +1,260 @@
+{
+  "name": "Week10 V3 | D - Invoice rules plus Gemini explanation",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Meridian invoice + Gemini explanation",
+        "formDescription": "Synthetic finance triage. AI may explain, not make payment decisions.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "team_id",
+              "fieldName": "team_id",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "invoice_id",
+              "fieldName": "invoice_id",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "supplier",
+              "fieldName": "supplier",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "invoice_ref",
+              "fieldName": "invoice_ref",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "amount_usd",
+              "fieldName": "amount_usd",
+              "fieldType": "number",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "po_id",
+              "fieldName": "po_id",
+              "fieldType": "text",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "bank_changed",
+              "fieldName": "bank_changed",
+              "fieldType": "text",
+              "requiredField": false
+            }
+          ]
+        },
+        "responseMode": "onReceived",
+        "options": {
+          "path": "week10-gemini",
+          "respondWithOptions": {
+            "values": {
+              "formSubmittedText": "Thank you. This is a classroom simulation; no payment is authorized."
+            }
+          }
+        }
+      },
+      "id": "117eff11-6cc3-4362-b6c1-9be2d844c8dc",
+      "name": "On form submission",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        120,
+        240
+      ],
+      "webhookId": "f93663a7-b29b-4091-bd11-a0de822f2767"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Week 10 V3. Run Once for All Items. SYNTHETIC FINANCE POLICY ONLY.\n// Rules are deterministic. Gemini may explain, never change status or pay.\n// Teaching limits: PO master and historic ledger below are fixtures, NOT live table lookups.\nconst poMaster = {\n  'PO-501': {supplier:'ALPHA',amount:1250},\n  'PO-502': {supplier:'BETA',amount:8950},\n  'PO-503': {supplier:'GAMMA',amount:4700},\n  'PO-505': {supplier:'DELTA',amount:24600},\n};\nconst posted = new Set(['ALPHA|A-776']); // historical fixture; does not grow automatically\nreturn $input.all().map(item => {\n  const d=item.json;\n  const team_id=String(d.team_id ?? '').trim().slice(0,20);\n  const invoice_id=String(d.invoice_id ?? '').trim().toUpperCase().slice(0,60);\n  const supplier=String(d.supplier ?? '').trim().toUpperCase().slice(0,60);\n  const invoice_ref=String(d.invoice_ref ?? '').trim().toUpperCase().slice(0,60);\n  const po_id=String(d.po_id ?? '').trim().toUpperCase().slice(0,60);\n  const raw=String(d.amount_usd ?? '').trim();\n  const amount=raw!=='' ? Number(raw) : NaN;\n  const bank_changed=['YES','TRUE','1'].includes(String(d.bank_changed ?? 'NO').trim().toUpperCase());\n  const manager_approval_required=Number.isFinite(amount) && amount>10000;\n  const flags=[];\n  let status='READY_FOR_HUMAN_CHECK', primary='Rules passed; human confirmation still required';\n  if(!invoice_id||!supplier||!invoice_ref||!Number.isFinite(amount)||amount<=0||amount>=10000000){\n    status='HOLD_INVALID_DATA';primary='Required field missing or invalid amount'; flags.push('INVALID_DATA');\n  } else if(posted.has(`${supplier}|${invoice_ref}`)){\n    status='HOLD_DUPLICATE';primary='Supplier and reference already in synthetic historic ledger';flags.push('HISTORIC_DUPLICATE');\n  } else if(bank_changed){\n    status='HOLD_BANK_CHANGE';primary='Bank details changed; independent verification required';flags.push('BANK_CHANGE');\n  } else if(!po_id){\n    status='REVIEW_MISSING_PO';primary='Purchase order missing';flags.push('MISSING_PO');\n  } else if(!poMaster[po_id]){\n    status='REVIEW_UNKNOWN_PO';primary='PO ID not in the approved synthetic PO master';flags.push('UNKNOWN_PO');\n  } else if(poMaster[po_id].supplier!==supplier){\n    status='REVIEW_PO_SUPPLIER';primary='Supplier does not match the PO master';flags.push('PO_SUPPLIER_MISMATCH');\n  } else if(Math.abs(poMaster[po_id].amount-amount)>0.01){\n    status='REVIEW_AMOUNT_MISMATCH';primary=`PO amount is $${poMaster[po_id].amount.toFixed(2)}, not the invoice amount`;flags.push('AMOUNT_MISMATCH');\n  } else if(manager_approval_required){\n    status='REVIEW_MANAGER';primary='Finance-manager approval required (amount > $10,000)';flags.push('HIGH_VALUE');\n  }\n  if(manager_approval_required&&!flags.includes('HIGH_VALUE')) flags.push('HIGH_VALUE');\n  const reason=primary + (manager_approval_required && status!=='REVIEW_MANAGER' ? '; finance-manager approval also required (>$10,000)' : '');\n  const control_flags=flags.join('|') || 'NONE';\n  const telegram_text=`MERIDIAN | SIMULATED INVOICE TRIAGE\\nTeam: ${team_id}\\nInvoice: ${invoice_id}\\nSupplier: ${supplier}\\nAmount: $${Number.isFinite(amount)?amount.toFixed(2):'INVALID'}\\nStatus: ${status}\\nFlags: ${control_flags}\\nReason: ${reason}\\nHUMAN REVIEW REQUIRED. NO PAYMENT.`;\n  return {json:{\n    team_id,invoice_id,supplier,invoice_ref,\n    amount_usd:Number.isFinite(amount)?amount:null,po_id,bank_changed:bank_changed?'YES':'NO',\n    status,reason,control_flags,received_at:new Date().toISOString(),\n    manager_approval_required,human_approval_required:true,payment_authorized:false,\n    ai_can_override_status:false,telegram_text\n  }};\n});",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "23824e54-d494-438d-8013-adafaab22d4c",
+      "name": "Classify invoice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Week10_Invoice_Triage"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "279742da-f021-4ffd-b82a-2a70825dffa4",
+      "name": "Save to Data Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        690,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ \"You are an educational finance process analyst. Deterministic status: \" + $(\"Classify invoice\").first().json.status + \". Reason: \" + $(\"Classify invoice\").first().json.reason + \". Write 2 short sentences to a finance reviewer in plain English. Explain why human approval is necessary. Do NOT change the status, claim a payment occurred, or ask for personal information.\" }}"
+      },
+      "id": "2fc7bf15-8772-43f2-b618-04dc220f5ed0",
+      "name": "Basic LLM Chain — explain only",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        990,
+        240
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsCode": "// The chain normally emits JSON.text. Preserve deterministic fields from the rule node.\nconst r=$('Classify invoice').first().json;\nconst incoming=$input.first().json;\nconst raw=incoming.text ?? incoming.output ?? incoming.response?.generations?.[0]?.[0]?.text;\nconst explanation=String(raw || '[No AI explanation returned; check model output]').slice(0,900);\nreturn [{json:{...r,ai_commentary:explanation,telegram_text:r.telegram_text+'\\nAI explanation (advisory ONLY): '+explanation}}];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "30e20040-6398-4900-b495-6746c73227db",
+      "name": "Join AI explanation with rule output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1250,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "={{ $json.telegram_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "None"
+        }
+      },
+      "id": "f4cf374d-2d58-4f9c-92c5-a40913e7764c",
+      "name": "Send Telegram notification",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1530,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-lite-latest",
+        "options": {
+          "temperature": 0.1
+        }
+      },
+      "id": "3174d075-4aab-4790-982c-f87d6c05314d",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        990,
+        490
+      ]
+    }
+  ],
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Classify invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify invoice": {
+      "main": [
+        [
+          {
+            "node": "Save to Data Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Data Table": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain — explain only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain — explain only": {
+      "main": [
+        [
+          {
+            "node": "Join AI explanation with rule output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Join AI explanation with rule output": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain — explain only",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "tags": [],
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

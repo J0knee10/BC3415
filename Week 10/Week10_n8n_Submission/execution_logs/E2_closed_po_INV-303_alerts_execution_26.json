@@ -1,0 +1,449 @@
+{
+  "id": "26",
+  "mode": "integrated",
+  "status": "success",
+  "startedAt": "2026-10-25T17:58:50.758Z",
+  "stoppedAt": "2026-10-25T17:58:52.780Z",
+  "workflowId": "Ag1NCqaexHYo4AyL",
+  "workflow": "Week10 V4 | sub | Alerts + Gemini explanation",
+  "nodes": [
+    {
+      "node": "When called with classified cases",
+      "status": "success",
+      "items_out": 1,
+      "ms": 0,
+      "error": null
+    },
+    {
+      "node": "Route by priority",
+      "status": "success",
+      "items_out": 1,
+      "ms": 4,
+      "error": null
+    },
+    {
+      "node": "Google Gemini Chat Model",
+      "status": "success",
+      "items_out": 0,
+      "ms": 1209,
+      "error": null
+    },
+    {
+      "node": "Gemini: explain the review (advisory)",
+      "status": "success",
+      "items_out": 1,
+      "ms": 1215,
+      "error": null
+    },
+    {
+      "node": "Guardrail + join with rule output",
+      "status": "success",
+      "items_out": 1,
+      "ms": 3,
+      "error": null
+    },
+    {
+      "node": "Save AI note to ledger row",
+      "status": "success",
+      "items_out": 1,
+      "ms": 75,
+      "error": null
+    },
+    {
+      "node": "Telegram: review with AI note",
+      "status": "success",
+      "items_out": 1,
+      "ms": 680,
+      "error": null
+    }
+  ],
+  "runData": {
+    "When called with classified cases": [
+      {
+        "startTime": 1792951130803,
+        "executionIndex": 0,
+        "source": [],
+        "hints": [],
+        "executionTime": 0,
+        "metadata": {
+          "parentExecution": {
+            "executionId": "24",
+            "workflowId": "L6IdCAmZHvmdEaTy",
+            "shouldResume": false,
+            "executionContext": {
+              "version": 1,
+              "establishedAt": 1792951130371,
+              "source": "webhook",
+              "triggerNode": {
+                "name": "POST /webhook/meridian-ap-v4/batch",
+                "type": "n8n-nodes-base.webhook"
+              },
+              "redaction": {
+                "version": 2,
+                "production": false,
+                "manual": false
+              }
+            }
+          }
+        },
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV303-30550",
+                  "channel": "api",
+                  "priority": "P2",
+                  "team_id": "T03",
+                  "invoice_id": "INV-303",
+                  "supplier": "ZETA",
+                  "invoice_ref": "Z-1",
+                  "amount_usd": 3200,
+                  "po_id": "PO-508",
+                  "bank_changed": "NO",
+                  "status": "REVIEW_PO_CLOSED",
+                  "reason": "PO-508 is CLOSED, not OPEN",
+                  "control_flags": "PO_CLOSED",
+                  "received_at": "2026-10-25T17:58:50.550Z",
+                  "manager_approval_required": false,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "",
+                  "ai_guardrail": "PENDING",
+                  "telegram_text": "MERIDIAN AP V4 | 🟠 REVIEW\nCase: AP-20261025-INV303-30550\nInvoice: INV-303 (api)\nSupplier: ZETA  Ref: Z-1\nAmount: $3200.00  PO: PO-508\nStatus: REVIEW_PO_CLOSED\nFlags: PO_CLOSED\nReason: PO-508 is CLOSED, not OPEN\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "ledger_row_id": 12
+                },
+                "index": 0,
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Route by priority": [
+      {
+        "startTime": 1792951130803,
+        "executionIndex": 1,
+        "source": [
+          {
+            "previousNode": "When called with classified cases",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 4,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [],
+            [
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV303-30550",
+                  "channel": "api",
+                  "priority": "P2",
+                  "team_id": "T03",
+                  "invoice_id": "INV-303",
+                  "supplier": "ZETA",
+                  "invoice_ref": "Z-1",
+                  "amount_usd": 3200,
+                  "po_id": "PO-508",
+                  "bank_changed": "NO",
+                  "status": "REVIEW_PO_CLOSED",
+                  "reason": "PO-508 is CLOSED, not OPEN",
+                  "control_flags": "PO_CLOSED",
+                  "received_at": "2026-10-25T17:58:50.550Z",
+                  "manager_approval_required": false,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "",
+                  "ai_guardrail": "PENDING",
+                  "telegram_text": "MERIDIAN AP V4 | 🟠 REVIEW\nCase: AP-20261025-INV303-30550\nInvoice: INV-303 (api)\nSupplier: ZETA  Ref: Z-1\nAmount: $3200.00  PO: PO-508\nStatus: REVIEW_PO_CLOSED\nFlags: PO_CLOSED\nReason: PO-508 is CLOSED, not OPEN\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "ledger_row_id": 12
+                },
+                "index": 0,
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ],
+            []
+          ]
+        }
+      }
+    ],
+    "Google Gemini Chat Model": [
+      {
+        "startTime": 1792951130812,
+        "executionTime": 1209,
+        "executionIndex": 3,
+        "executionStatus": "success",
+        "source": [
+          {
+            "previousNode": "Gemini: explain the review (advisory)",
+            "previousNodeRun": 0
+          }
+        ],
+        "data": {
+          "ai_languageModel": [
+            [
+              {
+                "json": {
+                  "response": {
+                    "generations": [
+                      [
+                        {
+                          "text": "Approving this invoice carries the financial risk of paying against a completed or canceled purchase order, which can cause budget discrepancies. Please verify with the procurement team whether PO-508 should be officially reopened or if a new purchase order is required before proceeding.",
+                          "generationInfo": {
+                            "finishReason": "STOP",
+                            "index": 0
+                          }
+                        }
+                      ]
+                    ]
+                  },
+                  "tokenUsage": {
+                    "completionTokens": 51,
+                    "promptTokens": 142,
+                    "totalTokens": 193
+                  }
+                }
+              }
+            ]
+          ]
+        },
+        "inputOverride": {
+          "ai_languageModel": [
+            [
+              {
+                "json": {
+                  "messages": [
+                    "Human: You are an accounts-payable process analyst at a training company. A deterministic rule engine has ALREADY decided this invoice's status; you only explain it.\n\nInvoice: INV-303 from ZETA, amount $3200, PO PO-508.\nStatus (fixed): REVIEW_PO_CLOSED\nFlags: PO_CLOSED\nRule reason: PO-508 is CLOSED, not OPEN\n\nWrite 2 short sentences for the AP reviewer: what the risk is and what to check before approving. Do NOT change or question the status, do NOT say the invoice is approved, paid or ready for payment, do NOT ask for personal or bank details."
+                  ],
+                  "estimatedTokens": 131,
+                  "options": {
+                    "google_api_key": {
+                      "lc": 1,
+                      "type": "secret",
+                      "id": [
+                        "GOOGLE_API_KEY"
+                      ]
+                    },
+                    "base_url": "https://generativelanguage.googleapis.com",
+                    "model": "gemini-flash-lite-latest",
+                    "temperature": 0.1
+                  }
+                }
+              }
+            ]
+          ]
+        },
+        "metadata": {
+          "subRun": [
+            {
+              "node": "Google Gemini Chat Model",
+              "runIndex": 0
+            }
+          ]
+        }
+      }
+    ],
+    "Gemini: explain the review (advisory)": [
+      {
+        "startTime": 1792951130807,
+        "executionIndex": 2,
+        "source": [
+          {
+            "previousNode": "Route by priority",
+            "previousNodeOutput": 1,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 1215,
+        "metadata": {
+          "tracing": {
+            "llm.tokens.in": 142,
+            "llm.tokens.out": 51,
+            "llm.tokens.total": 193,
+            "llm.tokens.estimated": false
+          }
+        },
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "text": "Approving this invoice carries the financial risk of paying against a completed or canceled purchase order, which can cause budget discrepancies. Please verify with the procurement team whether PO-508 should be officially reopened or if a new purchase order is required before proceeding."
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Guardrail + join with rule output": [
+      {
+        "startTime": 1792951132022,
+        "executionIndex": 4,
+        "source": [
+          {
+            "previousNode": "Gemini: explain the review (advisory)",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 3,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV303-30550",
+                  "channel": "api",
+                  "priority": "P2",
+                  "team_id": "T03",
+                  "invoice_id": "INV-303",
+                  "supplier": "ZETA",
+                  "invoice_ref": "Z-1",
+                  "amount_usd": 3200,
+                  "po_id": "PO-508",
+                  "bank_changed": "NO",
+                  "status": "REVIEW_PO_CLOSED",
+                  "reason": "PO-508 is CLOSED, not OPEN",
+                  "control_flags": "PO_CLOSED",
+                  "received_at": "2026-10-25T17:58:50.550Z",
+                  "manager_approval_required": false,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "Approving this invoice carries the financial risk of paying against a completed or canceled purchase order, which can cause budget discrepancies. Please verify with the procurement team whether PO-508 should be officially reopened or if a new purchase order is required before proceeding.",
+                  "ai_guardrail": "PASSED",
+                  "telegram_text": "MERIDIAN AP V4 | 🟠 REVIEW\nCase: AP-20261025-INV303-30550\nInvoice: INV-303 (api)\nSupplier: ZETA  Ref: Z-1\nAmount: $3200.00  PO: PO-508\nStatus: REVIEW_PO_CLOSED\nFlags: PO_CLOSED\nReason: PO-508 is CLOSED, not OPEN\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.\n\nAI note (advisory, guardrail PASSED): Approving this invoice carries the financial risk of paying against a completed or canceled purchase order, which can cause budget discrepancies. Please verify with the procurement team whether PO-508 should be officially reopened or if a new purchase order is required before proceeding.",
+                  "ledger_row_id": 12
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Save AI note to ledger row": [
+      {
+        "startTime": 1792951132025,
+        "executionIndex": 5,
+        "source": [
+          {
+            "previousNode": "Guardrail + join with rule output",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 75,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "case_id": "AP-20261025-INV303-30550",
+                  "channel": "api",
+                  "priority": "P2",
+                  "team_id": "T03",
+                  "invoice_id": "INV-303",
+                  "supplier": "ZETA",
+                  "invoice_ref": "Z-1",
+                  "amount_usd": 3200,
+                  "po_id": "PO-508",
+                  "bank_changed": "NO",
+                  "status": "REVIEW_PO_CLOSED",
+                  "reason": "PO-508 is CLOSED, not OPEN",
+                  "control_flags": "PO_CLOSED",
+                  "received_at": "2026-10-25T17:58:50.550Z",
+                  "manager_approval_required": false,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "ai_commentary": "Approving this invoice carries the financial risk of paying against a completed or canceled purchase order, which can cause budget discrepancies. Please verify with the procurement team whether PO-508 should be officially reopened or if a new purchase order is required before proceeding.",
+                  "ai_guardrail": "PASSED",
+                  "telegram_text": "MERIDIAN AP V4 | 🟠 REVIEW\nCase: AP-20261025-INV303-30550\nInvoice: INV-303 (api)\nSupplier: ZETA  Ref: Z-1\nAmount: $3200.00  PO: PO-508\nStatus: REVIEW_PO_CLOSED\nFlags: PO_CLOSED\nReason: PO-508 is CLOSED, not OPEN\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.",
+                  "id": 12,
+                  "createdAt": "2026-10-25T17:58:50.555Z",
+                  "updatedAt": "2026-10-25T17:58:52.033Z"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Telegram: review with AI note": [
+      {
+        "startTime": 1792951132100,
+        "executionIndex": 6,
+        "source": [
+          {
+            "previousNode": "Save AI note to ledger row",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 680,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "ok": true,
+                  "result": {
+                    "message_id": 49,
+                    "from": {
+                      "id": 8873365814,
+                      "is_bot": true,
+                      "first_name": "BC3415_Smishing_Triage",
+                      "username": "bc3415_smishing_bot"
+                    },
+                    "chat": {
+                      "id": "<redacted>",
+                      "first_name": "<redacted>",
+                      "last_name": "<redacted>",
+                      "username": "<redacted>",
+                      "type": "private"
+                    },
+                    "date": 1792951132,
+                    "text": "MERIDIAN AP V4 | 🟠 REVIEW\nCase: AP-20261025-INV303-30550\nInvoice: INV-303 (api)\nSupplier: ZETA  Ref: Z-1\nAmount: $3200.00  PO: PO-508\nStatus: REVIEW_PO_CLOSED\nFlags: PO_CLOSED\nReason: PO-508 is CLOSED, not OPEN\nHUMAN REVIEW REQUIRED. NO PAYMENT MADE.\n\nAI note (advisory, guardrail PASSED): Approving this invoice carries the financial risk of paying against a completed or canceled purchase order, which can cause budget discrepancies. Please verify with the procurement team whether PO-508 should be officially reopened or if a new purchase order is required before proceeding."
+                  }
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ]
+  }
+}

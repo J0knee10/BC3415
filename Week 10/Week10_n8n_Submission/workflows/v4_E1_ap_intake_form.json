@@ -1,0 +1,237 @@
+{
+  "name": "Week10 V4 | E1 - AP intake form",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Meridian AP intake (V4)",
+        "formDescription": "For AP clerks keying in supplier invoices. Synthetic training data only. The rules decide a review status; nothing here approves or pays.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Team / clerk ID",
+              "fieldName": "team_id",
+              "fieldType": "text",
+              "requiredField": true,
+              "placeholder": "T01"
+            },
+            {
+              "fieldLabel": "Invoice ID",
+              "fieldName": "invoice_id",
+              "fieldType": "text",
+              "requiredField": true,
+              "placeholder": "INV-301"
+            },
+            {
+              "fieldLabel": "Supplier",
+              "fieldName": "supplier",
+              "fieldType": "text",
+              "requiredField": true,
+              "placeholder": "EPSILON"
+            },
+            {
+              "fieldLabel": "Supplier invoice reference",
+              "fieldName": "invoice_ref",
+              "fieldType": "text",
+              "requiredField": true,
+              "placeholder": "E-101"
+            },
+            {
+              "fieldLabel": "Amount (USD)",
+              "fieldName": "amount_usd",
+              "fieldType": "number",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "PO number (blank if none)",
+              "fieldName": "po_id",
+              "fieldType": "text",
+              "requiredField": false,
+              "placeholder": "PO-506"
+            },
+            {
+              "fieldLabel": "Supplier says bank details changed?",
+              "fieldName": "bank_changed",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "NO"
+                  },
+                  {
+                    "option": "YES"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {
+          "path": "meridian-ap-v4",
+          "appendAttribution": false,
+          "buttonLabel": "Submit for triage"
+        }
+      },
+      "id": "00000000-0000-4000-8000-000000000021",
+      "name": "AP intake form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return $input.all().map(i => ({ json: { ...i.json, channel: 'form' } }));"
+      },
+      "id": "00000000-0000-4000-8000-000000000022",
+      "name": "Tag channel",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "Week10 V4 | sub | Core rules + AP ledger",
+          "cachedResultName": "Week10 V4 | sub | Core rules + AP ledger"
+        },
+        "mode": "once",
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "00000000-0000-4000-8000-000000000023",
+      "name": "Run V4 core (rules + ledger)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "Week10 V4 | sub | Alerts + Gemini explanation",
+          "cachedResultName": "Week10 V4 | sub | Alerts + Gemini explanation"
+        },
+        "mode": "once",
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "id": "00000000-0000-4000-8000-000000000024",
+      "name": "Start alerts (no wait)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        720,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "text",
+        "completionTitle": "={{ $('Run V4 core (rules + ledger)').first().json.status }}",
+        "completionMessage": "={{ (() => { const c = $('Run V4 core (rules + ledger)').first().json; return 'Case ' + c.case_id + ' | ' + c.priority + ' | ' + c.reason + ' | Flags: ' + c.control_flags + '. A person must still review it; no payment has been made.'; })() }}",
+        "options": {}
+      },
+      "id": "00000000-0000-4000-8000-000000000025",
+      "name": "Show triage result",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        960,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "AP intake form": {
+      "main": [
+        [
+          {
+            "node": "Tag channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag channel": {
+      "main": [
+        [
+          {
+            "node": "Run V4 core (rules + ledger)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run V4 core (rules + ledger)": {
+      "main": [
+        [
+          {
+            "node": "Start alerts (no wait)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start alerts (no wait)": {
+      "main": [
+        [
+          {
+            "node": "Show triage result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Singapore",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

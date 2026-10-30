@@ -1,0 +1,21 @@
+{
+  "received": 1,
+  "by_priority": {
+    "P2": 1
+  },
+  "by_status": {
+    "REVIEW_PO_CLOSED": 1
+  },
+  "payment_authorized": false,
+  "cases": [
+    {
+      "case_id": "AP-20261025-INV303-30550",
+      "invoice_id": "INV-303",
+      "status": "REVIEW_PO_CLOSED",
+      "priority": "P2",
+      "control_flags": "PO_CLOSED",
+      "manager_approval_required": false,
+      "reason": "PO-508 is CLOSED, not OPEN"
+    }
+  ]
+}

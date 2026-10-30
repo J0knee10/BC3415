@@ -129,3 +129,18 @@ The user questioned the split, so a split study was run (`src/split_study.py`, m
 - Measured on 24 Oct (not in reports/): a Gemini call is 123 in + 78 out tokens and takes 6–8 s; `predict()` with LIME takes 0.01–0.16 s. 8.8% of test messages reach the LLM (106/1,202). Sending all 50,000 checks a year would cost about US$12, gated about US$3, at US$0.30 / US$2.50 per million tokens (price not certain for the flash-lite alias).
 - README now has a "How it maps to the brief" paragraph, the review line for each verdict (no scam signals: 2.5%; spam: about 5%; likely scam: about 25% chance it's legitimate) and a "Why two steps" design decision. Copied to `Smishing_Triage/` and the hashes match `Indiv/` (60 files). No code or numbers changed, so the pipeline, notebook and PDF were not rerun.
 - **Remaining: record the video, add it to `Smishing_Triage/`, zip it.** Not committed to git.
+
+## Session of 25 Oct (desktop, `D:\Jon\Uni\BC3415\Project`): this machine brought up to date
+
+- The code here was current (git be83a46), but the untracked outputs were from 20 Oct (version 3, recall 0.733) and `Smishing_Triage/` had only 29 files. Re-ran `main.py --skip-download`: every version 4 number reproduced (0.761, CI 0.563–0.893 over 43 clusters, SG 36/60, review 10.0% / 41.5%, robustness 7/12).
+- `python -m src.scam_type --evaluate`: 30 of 36, with all 36 answered this time (no timeout). README and writeup §8 no longer say "one call timed out".
+- 19 tests pass, notebook rebuilt, figure redrawn, PDF reprinted, `Smishing_Triage/` rebuilt (60 files, hashes match `Indiv/`, no `.env` or key-like strings).
+- **Remaining: record the video, add it to `Smishing_Triage/`, zip it.** Not committed to git.
+- Later on 25 Oct: added **`Smishing_Triage_Slides.pptx`** (15 slides after the SRF slide was added as slide 3; was 14, in `Indiv/` and `Smishing_Triage/`, now 61 files). It follows VIDEO_SCRIPT.md section by section, with the spoken lines in the speaker notes. Slide 6 is blank for the demo recording. Section 1 now has a "Why would a bank pay" (Shared Responsibility Framework) passage, worded to match writeup §1; the plan runs about 4:50. Generator: `Project/slides_src/build.js` (pptxgenjs, not in the submission). VIDEO_SCRIPT.md "Screen:" cues now name slide numbers, and section 2 lists each demo message inline (all re-checked against the rebuilt model).
+
+## Session of 25 Oct (late): video added, submission folder ready
+
+- Video recorded: `Indiv/Video/VideoSubmission.mp4` (6:04, 4096×2160, 140 MB). The brief says "3–5 min (roughly, not exactly)", so it runs about a minute long.
+- README now points to the video and the slides (top paragraph). No code or numbers changed.
+- `Smishing_Triage/` rebuilt: 62 files, hashes match `Indiv/`, no `.env` or key-like strings. Also excluded: `Video/Video.pds` (editor project), `Video/video2978572168.mp4` (raw 88 s clip) and the `~$` Office lock file. Add `--exclude='./~$*' --exclude='./Video/Video.pds' --exclude='./Video/video2978572168.mp4'` to the sync command.
+- **Remaining: the user zips `Smishing_Triage/` and submits.** Not committed to git.

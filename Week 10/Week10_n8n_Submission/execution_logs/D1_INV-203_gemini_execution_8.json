@@ -1,0 +1,395 @@
+{
+  "id": "8",
+  "mode": "webhook",
+  "status": "success",
+  "startedAt": "2026-10-25T17:54:31.264Z",
+  "stoppedAt": "2026-10-25T17:54:33.303Z",
+  "workflowId": "07t9k3nWvSJf9ZMP",
+  "workflow": "Week10 V3 | D - Invoice rules plus Gemini explanation",
+  "nodes": [
+    {
+      "node": "On form submission",
+      "status": "success",
+      "items_out": 1,
+      "ms": 0,
+      "error": null
+    },
+    {
+      "node": "Classify invoice",
+      "status": "success",
+      "items_out": 1,
+      "ms": 6,
+      "error": null
+    },
+    {
+      "node": "Save to Data Table",
+      "status": "success",
+      "items_out": 1,
+      "ms": 87,
+      "error": null
+    },
+    {
+      "node": "Google Gemini Chat Model",
+      "status": "success",
+      "items_out": 0,
+      "ms": 1051,
+      "error": null
+    },
+    {
+      "node": "Basic LLM Chain — explain only",
+      "status": "success",
+      "items_out": 1,
+      "ms": 1063,
+      "error": null
+    },
+    {
+      "node": "Join AI explanation with rule output",
+      "status": "success",
+      "items_out": 1,
+      "ms": 5,
+      "error": null
+    },
+    {
+      "node": "Send Telegram notification",
+      "status": "success",
+      "items_out": 1,
+      "ms": 830,
+      "error": null
+    }
+  ],
+  "runData": {
+    "On form submission": [
+      {
+        "startTime": 1792950871312,
+        "executionIndex": 0,
+        "source": [],
+        "hints": [],
+        "executionTime": 0,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "team_id": "T02",
+                  "invoice_id": "INV-203",
+                  "supplier": "GAMMA",
+                  "invoice_ref": "G-211",
+                  "amount_usd": 14800,
+                  "po_id": "",
+                  "bank_changed": "NO",
+                  "submittedAt": "2026-10-26T01:54:31.226+08:00",
+                  "formMode": "production"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Classify invoice": [
+      {
+        "startTime": 1792950871312,
+        "executionIndex": 1,
+        "source": [
+          {
+            "previousNode": "On form submission",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 6,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "team_id": "T02",
+                  "invoice_id": "INV-203",
+                  "supplier": "GAMMA",
+                  "invoice_ref": "G-211",
+                  "amount_usd": 14800,
+                  "po_id": "",
+                  "bank_changed": "NO",
+                  "status": "REVIEW_MISSING_PO",
+                  "reason": "Purchase order missing; finance-manager approval also required (>$10,000)",
+                  "control_flags": "MISSING_PO|HIGH_VALUE",
+                  "received_at": "2026-10-25T17:54:31.317Z",
+                  "manager_approval_required": true,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "telegram_text": "MERIDIAN | SIMULATED INVOICE TRIAGE\nTeam: T02\nInvoice: INV-203\nSupplier: GAMMA\nAmount: $14800.00\nStatus: REVIEW_MISSING_PO\nFlags: MISSING_PO|HIGH_VALUE\nReason: Purchase order missing; finance-manager approval also required (>$10,000)\nHUMAN REVIEW REQUIRED. NO PAYMENT."
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Save to Data Table": [
+      {
+        "startTime": 1792950871318,
+        "executionIndex": 2,
+        "source": [
+          {
+            "previousNode": "Classify invoice",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 87,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "team_id": "T02",
+                  "invoice_id": "INV-203",
+                  "supplier": "GAMMA",
+                  "invoice_ref": "G-211",
+                  "amount_usd": 14800,
+                  "po_id": "",
+                  "bank_changed": "NO",
+                  "status": "REVIEW_MISSING_PO",
+                  "reason": "Purchase order missing; finance-manager approval also required (>$10,000)",
+                  "control_flags": "MISSING_PO|HIGH_VALUE",
+                  "received_at": "2026-10-25T17:54:31.317Z",
+                  "manager_approval_required": true,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "telegram_text": "MERIDIAN | SIMULATED INVOICE TRIAGE\nTeam: T02\nInvoice: INV-203\nSupplier: GAMMA\nAmount: $14800.00\nStatus: REVIEW_MISSING_PO\nFlags: MISSING_PO|HIGH_VALUE\nReason: Purchase order missing; finance-manager approval also required (>$10,000)\nHUMAN REVIEW REQUIRED. NO PAYMENT.",
+                  "id": 6,
+                  "createdAt": "2026-10-25T17:54:31.325Z",
+                  "updatedAt": "2026-10-25T17:54:31.325Z"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Google Gemini Chat Model": [
+      {
+        "startTime": 1792950871417,
+        "executionTime": 1051,
+        "executionIndex": 4,
+        "executionStatus": "success",
+        "source": [
+          {
+            "previousNode": "Basic LLM Chain — explain only",
+            "previousNodeRun": 0
+          }
+        ],
+        "data": {
+          "ai_languageModel": [
+            [
+              {
+                "json": {
+                  "response": {
+                    "generations": [
+                      [
+                        {
+                          "text": "This requisition currently lacks a purchase order and exceeds the $10,000 threshold, which triggers our dual-control policy. Human approval is required to verify the budget allocation and authorize manual intervention before processing can resume.",
+                          "generationInfo": {
+                            "finishReason": "STOP",
+                            "index": 0
+                          }
+                        }
+                      ]
+                    ]
+                  },
+                  "tokenUsage": {
+                    "completionTokens": 45,
+                    "promptTokens": 78,
+                    "totalTokens": 123
+                  }
+                }
+              }
+            ]
+          ]
+        },
+        "inputOverride": {
+          "ai_languageModel": [
+            [
+              {
+                "json": {
+                  "messages": [
+                    "Human: You are an educational finance process analyst. Deterministic status: REVIEW_MISSING_PO. Reason: Purchase order missing; finance-manager approval also required (>$10,000). Write 2 short sentences to a finance reviewer in plain English. Explain why human approval is necessary. Do NOT change the status, claim a payment occurred, or ask for personal information."
+                  ],
+                  "estimatedTokens": 74,
+                  "options": {
+                    "google_api_key": {
+                      "lc": 1,
+                      "type": "secret",
+                      "id": [
+                        "GOOGLE_API_KEY"
+                      ]
+                    },
+                    "base_url": "https://generativelanguage.googleapis.com",
+                    "model": "gemini-flash-lite-latest",
+                    "temperature": 0.1
+                  }
+                }
+              }
+            ]
+          ]
+        },
+        "metadata": {
+          "subRun": [
+            {
+              "node": "Google Gemini Chat Model",
+              "runIndex": 0
+            }
+          ]
+        }
+      }
+    ],
+    "Basic LLM Chain — explain only": [
+      {
+        "startTime": 1792950871405,
+        "executionIndex": 3,
+        "source": [
+          {
+            "previousNode": "Save to Data Table",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 1063,
+        "metadata": {
+          "tracing": {
+            "llm.tokens.in": 78,
+            "llm.tokens.out": 45,
+            "llm.tokens.total": 123,
+            "llm.tokens.estimated": false
+          }
+        },
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "text": "This requisition currently lacks a purchase order and exceeds the $10,000 threshold, which triggers our dual-control policy. Human approval is required to verify the budget allocation and authorize manual intervention before processing can resume."
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Join AI explanation with rule output": [
+      {
+        "startTime": 1792950872468,
+        "executionIndex": 5,
+        "source": [
+          {
+            "previousNode": "Basic LLM Chain — explain only",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 5,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "team_id": "T02",
+                  "invoice_id": "INV-203",
+                  "supplier": "GAMMA",
+                  "invoice_ref": "G-211",
+                  "amount_usd": 14800,
+                  "po_id": "",
+                  "bank_changed": "NO",
+                  "status": "REVIEW_MISSING_PO",
+                  "reason": "Purchase order missing; finance-manager approval also required (>$10,000)",
+                  "control_flags": "MISSING_PO|HIGH_VALUE",
+                  "received_at": "2026-10-25T17:54:31.317Z",
+                  "manager_approval_required": true,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "telegram_text": "MERIDIAN | SIMULATED INVOICE TRIAGE\nTeam: T02\nInvoice: INV-203\nSupplier: GAMMA\nAmount: $14800.00\nStatus: REVIEW_MISSING_PO\nFlags: MISSING_PO|HIGH_VALUE\nReason: Purchase order missing; finance-manager approval also required (>$10,000)\nHUMAN REVIEW REQUIRED. NO PAYMENT.\nAI explanation (advisory ONLY): This requisition currently lacks a purchase order and exceeds the $10,000 threshold, which triggers our dual-control policy. Human approval is required to verify the budget allocation and authorize manual intervention before processing can resume.",
+                  "ai_commentary": "This requisition currently lacks a purchase order and exceeds the $10,000 threshold, which triggers our dual-control policy. Human approval is required to verify the budget allocation and authorize manual intervention before processing can resume."
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Send Telegram notification": [
+      {
+        "startTime": 1792950872473,
+        "executionIndex": 6,
+        "source": [
+          {
+            "previousNode": "Join AI explanation with rule output",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 830,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "ok": true,
+                  "result": {
+                    "message_id": 40,
+                    "from": {
+                      "id": 8873365814,
+                      "is_bot": true,
+                      "first_name": "BC3415_Smishing_Triage",
+                      "username": "bc3415_smishing_bot"
+                    },
+                    "chat": {
+                      "id": "<redacted>",
+                      "first_name": "<redacted>",
+                      "last_name": "<redacted>",
+                      "username": "<redacted>",
+                      "type": "private"
+                    },
+                    "date": 1792950873,
+                    "text": "MERIDIAN | SIMULATED INVOICE TRIAGE\nTeam: T02\nInvoice: INV-203\nSupplier: GAMMA\nAmount: $14800.00\nStatus: REVIEW_MISSING_PO\nFlags: MISSING_PO|HIGH_VALUE\nReason: Purchase order missing; finance-manager approval also required (>$10,000)\nHUMAN REVIEW REQUIRED. NO PAYMENT.\nAI explanation (advisory ONLY): This requisition currently lacks a purchase order and exceeds the $10,000 threshold, which triggers our dual-control policy. Human approval is required to verify the budget allocation and authorize manual intervention before processing can resume."
+                  }
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ]
+  }
+}

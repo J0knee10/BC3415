@@ -1,0 +1,214 @@
+{
+  "id": "6",
+  "mode": "webhook",
+  "status": "success",
+  "startedAt": "2026-10-25T17:48:30.977Z",
+  "stoppedAt": "2026-10-25T17:48:31.874Z",
+  "workflowId": "BM7aPdLJUJ8eGfGC",
+  "workflow": "Week10 V3 | C - Invoice rules to Data Table to Telegram",
+  "nodes": [
+    {
+      "node": "On form submission",
+      "status": "success",
+      "items_out": 1,
+      "ms": 0,
+      "error": null
+    },
+    {
+      "node": "Classify invoice",
+      "status": "success",
+      "items_out": 1,
+      "ms": 4,
+      "error": null
+    },
+    {
+      "node": "Save to Data Table",
+      "status": "success",
+      "items_out": 1,
+      "ms": 148,
+      "error": null
+    },
+    {
+      "node": "Send Telegram notification",
+      "status": "success",
+      "items_out": 1,
+      "ms": 701,
+      "error": null
+    }
+  ],
+  "runData": {
+    "On form submission": [
+      {
+        "startTime": 1792950511017,
+        "executionIndex": 0,
+        "source": [],
+        "hints": [],
+        "executionTime": 0,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "team_id": "T01",
+                  "invoice_id": "INV-205",
+                  "supplier": "DELTA",
+                  "invoice_ref": "D-555",
+                  "amount_usd": 24600,
+                  "po_id": "PO-505",
+                  "bank_changed": "NO",
+                  "submittedAt": "2026-10-26T01:48:30.947+08:00",
+                  "formMode": "production"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Classify invoice": [
+      {
+        "startTime": 1792950511017,
+        "executionIndex": 1,
+        "source": [
+          {
+            "previousNode": "On form submission",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 4,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "team_id": "T01",
+                  "invoice_id": "INV-205",
+                  "supplier": "DELTA",
+                  "invoice_ref": "D-555",
+                  "amount_usd": 24600,
+                  "po_id": "PO-505",
+                  "bank_changed": "NO",
+                  "status": "REVIEW_MANAGER",
+                  "reason": "Finance-manager approval required (amount > $10,000)",
+                  "control_flags": "HIGH_VALUE",
+                  "received_at": "2026-10-25T17:48:31.021Z",
+                  "manager_approval_required": true,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "telegram_text": "MERIDIAN | SIMULATED INVOICE TRIAGE\nTeam: T01\nInvoice: INV-205\nSupplier: DELTA\nAmount: $24600.00\nStatus: REVIEW_MANAGER\nFlags: HIGH_VALUE\nReason: Finance-manager approval required (amount > $10,000)\nHUMAN REVIEW REQUIRED. NO PAYMENT."
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Save to Data Table": [
+      {
+        "startTime": 1792950511021,
+        "executionIndex": 2,
+        "source": [
+          {
+            "previousNode": "Classify invoice",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 148,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "team_id": "T01",
+                  "invoice_id": "INV-205",
+                  "supplier": "DELTA",
+                  "invoice_ref": "D-555",
+                  "amount_usd": 24600,
+                  "po_id": "PO-505",
+                  "bank_changed": "NO",
+                  "status": "REVIEW_MANAGER",
+                  "reason": "Finance-manager approval required (amount > $10,000)",
+                  "control_flags": "HIGH_VALUE",
+                  "received_at": "2026-10-25T17:48:31.021Z",
+                  "manager_approval_required": true,
+                  "human_approval_required": true,
+                  "payment_authorized": false,
+                  "ai_can_override_status": false,
+                  "telegram_text": "MERIDIAN | SIMULATED INVOICE TRIAGE\nTeam: T01\nInvoice: INV-205\nSupplier: DELTA\nAmount: $24600.00\nStatus: REVIEW_MANAGER\nFlags: HIGH_VALUE\nReason: Finance-manager approval required (amount > $10,000)\nHUMAN REVIEW REQUIRED. NO PAYMENT.",
+                  "id": 4,
+                  "createdAt": "2026-10-25T17:48:31.026Z",
+                  "updatedAt": "2026-10-25T17:48:31.026Z"
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ],
+    "Send Telegram notification": [
+      {
+        "startTime": 1792950511172,
+        "executionIndex": 3,
+        "source": [
+          {
+            "previousNode": "Save to Data Table",
+            "previousNodeOutput": 0,
+            "previousNodeRun": 0
+          }
+        ],
+        "hints": [],
+        "executionTime": 701,
+        "executionStatus": "success",
+        "data": {
+          "main": [
+            [
+              {
+                "json": {
+                  "ok": true,
+                  "result": {
+                    "message_id": 39,
+                    "from": {
+                      "id": 8873365814,
+                      "is_bot": true,
+                      "first_name": "BC3415_Smishing_Triage",
+                      "username": "bc3415_smishing_bot"
+                    },
+                    "chat": {
+                      "id": "<redacted>",
+                      "first_name": "<redacted>",
+                      "last_name": "<redacted>",
+                      "username": "<redacted>",
+                      "type": "private"
+                    },
+                    "date": 1792950511,
+                    "text": "MERIDIAN | SIMULATED INVOICE TRIAGE\nTeam: T01\nInvoice: INV-205\nSupplier: DELTA\nAmount: $24600.00\nStatus: REVIEW_MANAGER\nFlags: HIGH_VALUE\nReason: Finance-manager approval required (amount > $10,000)\nHUMAN REVIEW REQUIRED. NO PAYMENT."
+                  }
+                },
+                "pairedItem": {
+                  "item": 0
+                }
+              }
+            ]
+          ]
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+[
+  {"po_id": "PO-501", "supplier": "ALPHA",   "amount_usd": 1250,  "status": "OPEN",   "buyer": "Facilities"},
+  {"po_id": "PO-502", "supplier": "BETA",    "amount_usd": 8950,  "status": "OPEN",   "buyer": "IT"},
+  {"po_id": "PO-503", "supplier": "GAMMA",   "amount_usd": 4700,  "status": "OPEN",   "buyer": "Operations"},
+  {"po_id": "PO-505", "supplier": "DELTA",   "amount_usd": 24600, "status": "OPEN",   "buyer": "Operations"},
+  {"po_id": "PO-506", "supplier": "EPSILON", "amount_usd": 6000,  "status": "OPEN",   "buyer": "Marketing"},
+  {"po_id": "PO-507", "supplier": "EPSILON", "amount_usd": 5500,  "status": "OPEN",   "buyer": "Marketing"},
+  {"po_id": "PO-508", "supplier": "ZETA",    "amount_usd": 3200,  "status": "CLOSED", "buyer": "IT"}
+]
