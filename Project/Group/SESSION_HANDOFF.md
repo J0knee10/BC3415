@@ -1,8 +1,19 @@
 # Session handoff: BC3415 group project
 
-Last session: 25 Oct 2026. Pick up from "Next steps" below.
+Last session: 31 Oct 2026. Pick up from "Next steps" below.
 
-## Latest (25 Oct): group switched to the Carousell dispute agent
+## Latest (31 Oct): business case filled in (task 5)
+
+The Business case section of the Claude Doc now has numbers, and `Project Brief (Carousell Dispute Agent).docx` was re-exported:
+
+- **"How big the problem is" list:** SPF 2025 (Carousell 29.0% of 6,703 e-commerce scams, victims paid by PayNow/bank transfer); ESSR 1H 2026 (+19.3% to 3,865 cases, Carousell the most); Carousell SG suspended 52,000+ accounts and reviewed 78,000+ reports in 2025; Mercari dispute rate 0.40–0.56%; Carousell buyer fee 3.5–6%; Carousell already uses AI in support.
+- **Value formula, low / base / high:** S$71k / **S$400k** / S$2.0M a year for Singapore. Staff time is only ~S$80k (about 1.3 full-time staff) in the base case; the bigger term is trust: each +1 percentage point of deals moved into the 'Buy' button ≈ S$320k a year in fees.
+- **Key derivation:** Carousell says 99.97% of SG transactions in 2025 were scam-free (0.03% recorded scams). SPF counts ~1,940–2,870 Carousell scam cases, so roughly 6.5M–9.6M SG transactions a year (base 8M). The Buy-button share, escalation rate, time saved, order value and the uplift in Buy-button deals are labelled assumptions.
+- **Standalone business case for slides and video:** Claude Doc https://claude.ai/artifact/2k4hTjmFD2CwmhwS91X3Cr, exported as `Business Case (Carousell Dispute Agent).docx` for Google Drive. In the Word file the formula was changed from raw LaTeX to plain text; re-apply that fix if you export again.
+- **Project report for slides and video (1 Nov):** Claude Doc https://claude.ai/artifact/AyroVWNH81xfDTsaf1AsQH, exported as `Project Report (Carousell Dispute Agent).docx` for Google Drive (formula fixed to plain text, as above). It covers the summary, problem, solution with workflow diagram, a dated log of what was done (VeriAssist → PolicyPatch → Shopee → Carousell), business case, conclusions, risks, next steps by role, a 12-slide outline and a video run sheet. Slides 8 (demo) and 9 (results) wait on the build.
+- **Check by hand:** Carousell's help pages block automated reading, so the buyer fee tiers (3.5–6%) and the safety-policy rule (delivery orders must use 'Buy') come from search results only. Chargeflow's 30–60 min per case is a vendor figure.
+
+## Earlier (25 Oct): group switched to the Carousell dispute agent
 
 The user confirmed the switch. The new brief is a Claude Doc: https://claude.ai/artifact/GT6FV41MgCYXh5QeQWnTmQ. It covers the problem, evidence, workflow diagram, data, evaluation, business case, risks, the 6-person work split (C1 to C4 coders, B1 and B2 business) and a timeline to an assumed 15 Nov deadline. `Project Brief.docx` is untouched (still PolicyPatch). Next steps:
 
